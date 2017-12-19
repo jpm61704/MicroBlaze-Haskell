@@ -39,41 +39,40 @@ data MBSize = ByteSize
             | WordSize
             deriving Show
 
---
--- Microblaze registers:
---
-data MBReg = R0
-           | R1
-           | R2
-           | R3
-           | R4
-           | R5
-           | R6
-           | R7
-           | R8
-           | R9
-           | R10
-           | R11
-           | R12
-           | R13
-           | R14
-           | R15
-           | R16
-           | R17
-           | R18
-           | R19
-           | R20
-           | R21
-           | R22
-           | R23
-           | R24
-           | R25
-           | R26
-           | R27
-           | R28
-           | R29
-           | R30
-           | R31
+-- * Register Type
+
+data MBReg = R0 -- ^ Dedicated, Value 0
+           | R1 -- ^ Dedicated, Stack Pointer
+           | R2 -- ^ Dedicated, Read-only small data area anchor
+           | R3 -- ^ Volatile, Return Value
+           | R4 -- ^ Volatile, Return Value
+           | R5 -- ^ Volatile, Passing Parameter / Temporary
+           | R6 -- ^ Volatile, Passing Parameter / Temporary
+           | R7 -- ^ Volatile, Passing Parameter / Temporary
+           | R8 -- ^ Volatile, Passing Parameter / Temporary
+           | R9 -- ^ Volatile, Passing Parameter / Temporary
+           | R10 -- ^ Volatile, Passing Parameter / Temporary
+           | R11 -- ^ Volatile, Temporary
+           | R12 -- ^ Volatile, Temporary
+           | R13 -- ^ Dedicated, Read-write small data area anchor
+           | R14 -- ^ Dedicated, Return address for Interrupt
+           | R15 -- ^ Dedicated, Return address for Sub-routine
+           | R16 -- ^ Dedicated, Return address for Trap (Debugger)
+           | R17 -- ^ Dedicated, Return address for Exceptions
+           | R18 -- ^ Dedicated, Reserved for assembler
+           | R19 -- ^ Non-volatile, must be saved across function calls
+           | R20 -- ^ Non-volatile, must be saved across function calls
+           | R21 -- ^ Non-volatile, must be saved across function calls
+           | R22 -- ^ Non-volatile, must be saved across function calls
+           | R23 -- ^ Non-volatile, must be saved across function calls
+           | R24 -- ^ Non-volatile, must be saved across function calls
+           | R25 -- ^ Non-volatile, must be saved across function calls
+           | R26 -- ^ Non-volatile, must be saved across function calls
+           | R27 -- ^ Non-volatile, must be saved across function calls
+           | R28 -- ^ Non-volatile, must be saved across function calls
+           | R29 -- ^ Non-volatile, must be saved across function calls
+           | R30 -- ^ Non-volatile, must be saved across function calls
+           | R31 -- ^ Non-volatile, must be saved across function calls
            deriving (Show,Enum)
 
 --
