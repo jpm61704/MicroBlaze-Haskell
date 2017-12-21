@@ -1,16 +1,56 @@
 module MachineState(
-    writeRegister
-  , readRegister
-  , MBRegisters
+  -- * Microblaze Machine type
+    MicroBlaze(MicroBlaze)
   , MBWord
-                   ) where
+  
+  -- ** Special-Purpose Registers
+  , RPC
+  , RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
+ 
+  
+  -- ** General-Purpose Registers
+  , MBRegisters
+  -- *** Register Manipulation
+  , writeRegister
+  , readRegister
+  , readRegisterSt
+  , writeRegisterSt
+  ) where
 
 import Boilerplate
 import InsSet
-import Data.Int
+import Data.Word
+import Control.Monad.State.Lazy
+
+
+-- * Microblaze
+
+-- | Full MicroBlaze Register Profile
+data MicroBlaze = MicroBlaze MBRegisters RPC RMSR
 
 -- | Standard word size for MicroBlaze
-type MBWord = Int32
+type MBWord = Word32
+
+-- | Program Counter
+type RPC = MBWord
+
+-- ** Machine Status Register
+
+-- | the machine status register
+data RMSR = RMSR { _cc  :: Bool -- ^ arithmetic carry copy (read-only)
+                 , _dce :: Bool -- ^ data cache enable
+                 , _dz  :: Bool -- ^ division by zero
+                 , _ice :: Bool -- ^ instruction cache enable
+                 , _fsl :: Bool -- ^ fsl error 
+                 , _bip :: Bool -- ^ break in progress
+                 , _c   :: Bool -- ^ arithmetic carry 
+                 , _ie  :: Bool -- ^ interrupt enable
+                 , _be  :: Bool -- ^ buslock enable
+                 }
+
+
+
+-- ** Register Specifications
 
 -- | the types of registers in MicroBlaze
 data MBRegisterType = Dedicated | Volatile | NonVolatile | Special
@@ -122,3 +162,14 @@ readRegister R30 (MBRegisters b1 b2 b3 b4) = readRegBlock RB7 b4
 readRegister R31 (MBRegisters b1 b2 b3 b4) = readRegBlock RB8 b4
 
 
+readRegisterSt :: MBReg -> State MicroBlaze MBWord
+readRegisterSt r = do
+  (MicroBlaze x _ _) <- get
+  return $ readRegister r x
+
+
+writeRegisterSt :: MBReg -> MBWord -> State MicroBlaze ()
+writeRegisterSt r w = do
+  (MicroBlaze rs rpc msr) <- get
+  put $ MicroBlaze (writeRegister r w rs) rpc msr
+  return ()
