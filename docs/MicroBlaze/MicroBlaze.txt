@@ -328,9 +328,12 @@ MicroBlaze :: MBRegisters -> RPC -> RMSR -> MicroBlaze
 
 -- | Standard word size for MicroBlaze
 type MBWord = W32
+newMicroBlaze :: MicroBlaze
 
 -- | Program Counter
 type RPC = MBWord
+getRPC :: State MicroBlaze MBWord
+setRPC :: MBWord -> State MicroBlaze ()
 
 -- | the machine status register
 data RMSR
@@ -362,6 +365,7 @@ RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
 
 -- | buslock enable
 [_be] :: RMSR -> Bit
+emptyRMSR :: RMSR
 data MachineStatusBit
 CarryCopy :: MachineStatusBit
 DataCacheEnable :: MachineStatusBit
@@ -377,7 +381,12 @@ getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
 
 -- | The register store for the Microblaze
 data MBRegisters
+emptyRegisters :: MBRegisters
 getRegister :: MBReg -> State MicroBlaze MBWord
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
 
 module Interpreter
+exec :: Ins -> State MicroBlaze ()
+
+module TestData
+quickTest :: State MicroBlaze W32

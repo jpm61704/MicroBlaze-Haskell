@@ -2,18 +2,22 @@ module MachineState(
   -- * Microblaze Machine type
     MicroBlaze(MicroBlaze)
   , MBWord
+  , newMicroBlaze
 
   -- ** Special-Purpose Registers
   , RPC
-
+  , getRPC
+  , setRPC
   -- *** Machine Status Register
   , RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
+  , emptyRMSR
   , MachineStatusBit(..)
   , setMSRBit
   , getMSRBit
 
   -- ** General-Purpose Registers
   , MBRegisters
+  , emptyRegisters
   -- *** Register Manipulation
   , getRegister
   , setRegister
@@ -32,8 +36,22 @@ data MicroBlaze = MicroBlaze MBRegisters RPC RMSR
 -- | Standard word size for MicroBlaze
 type MBWord = W32
 
+newMicroBlaze :: MicroBlaze
+newMicroBlaze = MicroBlaze emptyRegisters zero32 emptyRMSR
+
 -- | Program Counter
 type RPC = MBWord
+
+getRPC :: State MicroBlaze MBWord
+getRPC = do
+  (MicroBlaze _ rpc _) <- get
+  return rpc
+
+setRPC :: MBWord -> State MicroBlaze ()
+setRPC loc = do
+  (MicroBlaze rs _ rmsr) <- get
+  put $ MicroBlaze rs loc rmsr
+  return ()
 
 -- ** Machine Status Register
 
@@ -220,3 +238,14 @@ setRegister r w = do
   (MicroBlaze rs rpc msr) <- get
   put $ MicroBlaze (writeRegister r w rs) rpc msr
   return ()
+
+
+
+emptyRMSR :: RMSR
+emptyRMSR = RMSR C C C C C C C C C
+
+emptyRB :: RegBlock
+emptyRB = RB zero32 zero32 zero32 zero32 zero32 zero32 zero32 zero32
+
+emptyRegisters :: MBRegisters
+emptyRegisters = MBRegisters emptyRB emptyRB emptyRB emptyRB

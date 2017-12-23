@@ -5,11 +5,11 @@ import           Control.Monad.State.Lazy
 import           InsSet
 import           MachineState
 
-{-
-exec :: Ins -> State MBRegisters ()
+
+exec :: Ins -> State MicroBlaze ()
 exec (Add ra rb rd) = do
-  a <- readRegisterSt ra
-  b <- readRegisterSt rb
-  writeRegisterSt rd (a + b)
+  a <- getRegister ra
+  b <- getRegister rb
+  setRegister rd $ plusW32 a b C
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
--}
+
