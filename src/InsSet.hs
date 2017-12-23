@@ -1,7 +1,7 @@
 module InsSet where
 
-import Boilerplate
-import Data.Int
+import           Boilerplate
+import           Data.Int
 
 type Label = String
 
@@ -82,152 +82,7 @@ data MBReg = R0 -- ^ Dedicated, Value 0
 -- assembly statement;
 --
 
-{-
-data Ins = InsA OpCodeA MBReg MBReg MBReg
-         | InsB OpCodeB MBReg MBReg W16
 
-data OpCodeA = Add | Addc | Addk | Addkc | And | Andn
-             | Beq | Beqd 
-
-data OpCodeB = Addi | Addic | Addik | Addikc | Andi | Andni
-             | Beqi | Beqid 
-             | Bge MBReg MBReg
-          | Bged MBReg MBReg
-          | Bgei MBReg W16
-             | Bgeid MBReg W16
-             | Bgt MBReg MBReg
-             | Bgtd MBReg MBReg
-             | Bgti MBReg W16
-             | Bgtid MBReg W16
-             | Ble MBReg MBReg
-             | Bled MBReg MBReg
-             | Blei MBReg W16
-             | Bleid MBReg W16
-             | Blt MBReg MBReg
-             | Bltd MBReg MBReg
-             | Blti MBReg W16
-             | Bltid MBReg W16
-             | Bne MBReg MBReg
-             | Bned MBReg MBReg
-             | Bnei MBReg W16
-             | Bneid MBReg W16
-             | Br MBReg
-             | Bra MBReg
-             | Brd MBReg
-             | Brad MBReg
-             | Brld MBReg MBReg
-             | Brald MBReg MBReg
-
-             | Bri W16
-             | Brai W16
-             | Brid W16
-             | Braid W16
-             | Brlid MBReg W16
-             | Bralid MBReg W16
-
-             | Brk MBReg MBReg
-             | Brki MBReg W16
-
-             | Bsrl MBReg MBReg MBReg
-             | Bsra MBReg MBReg MBReg
-             | Bsll MBReg MBReg MBReg
-
-             | Bsrli MBReg MBReg W16
-             | Bsrai MBReg MBReg W16
-             | Bslli MBReg MBReg W16
-
-             | Cmp MBReg MBReg MBReg
-             | Cmpu MBReg MBReg MBReg
-
-             | Fadd MBReg MBReg MBReg
-             | Frsub MBReg MBReg MBReg
-
-             | Fmul MBReg MBReg MBReg
-             | Fdiv MBReg MBReg MBReg
-
-             -- the following seven need a '.' before the last two characters
-             -- in the code when put to formatted strings:
-             | Fcmpun MBReg MBReg MBReg
-             | Fcmplt MBReg MBReg MBReg
-             | Fcmpeq MBReg MBReg MBReg
-             | Fcmple MBReg MBReg MBReg
-             | Fcmpgt MBReg MBReg MBReg
-             | Fcmpne MBReg MBReg MBReg
-             | Fcmpge MBReg MBReg MBReg
-
-             | Flt MBReg MBReg
-             | Fint MBReg MBReg
-             | Fsqrt MBReg MBReg
-
-             -- get from the FSL interface:
-             | Get MBReg Int
-             | Getd MBReg Int
-
-             | Idiv MBReg MBReg MBReg
-             | Idivu MBReg MBReg MBReg
-
-             | Imm
-
-             | Lbu MBReg MBReg MBReg
-             | Lbui MBReg MBReg W16
-             | Lhu MBReg MBReg MBReg
-             | Lhui MBReg MBReg W16
-             | Lw MBReg MBReg MBReg
-             | Lwi MBReg MBReg W16
-
-             | Mfs MBReg MBReg
-             | Msrclr MBReg W16
-             | Msrset MBReg W16
-             | Mts MBReg W16
-
-             | Mul MBReg MBReg MBReg
-             | Mulhu MBReg MBReg MBReg
-             | Mulhsu MBReg MBReg MBReg
-             | Muli MBReg MBReg W16
-
-             | Or MBReg MBReg MBReg
-             | Ori MBReg MBReg W16
-
-             | Pcmpbf MBReg MBReg MBReg
-             | Pcmpne MBReg MBReg MBReg
-
-             -- put to FSL interface:
-             | Put MBReg Int
-             | Putd MBReg MBReg Int
-             | Rsub MBReg MBReg MBReg
-             | Rsubc MBReg MBReg MBReg
-             | Rsubk MBReg MBReg MBReg
-             | Rsubkc MBReg MBReg MBReg
-
-             | Rsubi MBReg MBReg W16
-             | Rsubic MBReg MBReg W16
-             | Rsubik MBReg MBReg W16
-             | Rsubikc MBReg MBReg W16
-
-             | Rtbd MBReg W16
-             | Rtid MBReg W16
-             | Rted MBReg W16
-             | Rtsd MBReg W16
-
-             | Sb MBReg MBReg MBReg
-             | Sbi MBReg MBReg W16
-             | Sext16 MBReg MBReg
-
-             | Sh MBReg MBReg MBReg
-             | Shi MBReg MBReg W16
-
-             | Sra MBReg MBReg
-             | Src MBReg MBReg
-             | Sw MBReg MBReg MBReg
-             | Swi MBReg MBReg W16
-
-             | Wdc MBReg MBReg
-             | Wic MBReg MBReg
-
-             | Xor MBReg MBReg MBReg
-             | Xori MBReg MBReg W16
-             deriving Show
--}
 
 data Ins  = Add MBReg MBReg MBReg
           | Addc MBReg MBReg MBReg
@@ -305,7 +160,7 @@ data Ins  = Add MBReg MBReg MBReg
           | Flt MBReg MBReg
           | Fint MBReg MBReg
           | Fsqrt MBReg MBReg
-          
+
           -- get from the FSL interface:
           | Get MBReg Int
           | Getd MBReg Int

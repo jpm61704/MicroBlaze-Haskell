@@ -35,7 +35,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - MicroBlaze
+    - MicroBlaze 
 
 tests:
   MicroBlaze-test:
@@ -47,3 +47,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - MicroBlaze
+

@@ -2,25 +2,26 @@ module MachineState(
   -- * Microblaze Machine type
     MicroBlaze(MicroBlaze)
   , MBWord
-  
+
   -- ** Special-Purpose Registers
   , RPC
+
+  -- *** Machine Status Register
   , RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
- 
-  
+  , MachineStatusBit(..)
+  , setMSRBit
+  , getMSRBit
+
   -- ** General-Purpose Registers
   , MBRegisters
   -- *** Register Manipulation
-  , writeRegister
-  , readRegister
-  , readRegisterSt
-  , writeRegisterSt
+  , getRegister
+  , setRegister
   ) where
 
-import Boilerplate
-import InsSet
-import Data.Word
-import Control.Monad.State.Lazy
+import           Boilerplate
+import           Control.Monad.State.Lazy
+import           InsSet
 
 
 -- * Microblaze
@@ -29,7 +30,7 @@ import Control.Monad.State.Lazy
 data MicroBlaze = MicroBlaze MBRegisters RPC RMSR
 
 -- | Standard word size for MicroBlaze
-type MBWord = Word32
+type MBWord = W32
 
 -- | Program Counter
 type RPC = MBWord
@@ -37,17 +38,63 @@ type RPC = MBWord
 -- ** Machine Status Register
 
 -- | the machine status register
-data RMSR = RMSR { _cc  :: Bool -- ^ arithmetic carry copy (read-only)
-                 , _dce :: Bool -- ^ data cache enable
-                 , _dz  :: Bool -- ^ division by zero
-                 , _ice :: Bool -- ^ instruction cache enable
-                 , _fsl :: Bool -- ^ fsl error 
-                 , _bip :: Bool -- ^ break in progress
-                 , _c   :: Bool -- ^ arithmetic carry 
-                 , _ie  :: Bool -- ^ interrupt enable
-                 , _be  :: Bool -- ^ buslock enable
+data RMSR = RMSR { _cc  :: Bit -- ^ arithmetic carry copy (read-only)
+                 , _dce :: Bit -- ^ data cache enable
+                 , _dz  :: Bit -- ^ division by zero
+                 , _ice :: Bit -- ^ instruction cache enable
+                 , _fsl :: Bit -- ^ fsl error
+                 , _bip :: Bit -- ^ break in progress
+                 , _c   :: Bit -- ^ arithmetic carry
+                 , _ie  :: Bit -- ^ interrupt enable
+                 , _be  :: Bit -- ^ buslock enable
                  }
 
+data MachineStatusBit = CarryCopy
+                      | DataCacheEnable
+                      | DivisionByZero
+                      | InstructionCacheEnable
+                      | FSLError
+                      | BreakInProgress
+                      | Carry
+                      | InterruptEnable
+                      | BuslockEnable
+
+
+-- | sets the machine status bit indicated to the desired boolean value
+setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
+setStatus CarryCopy _ rmsr = rmsr
+setStatus DataCacheEnable b (RMSR cc _ dz ice fsl bip c ie be) = (RMSR cc b dz ice fsl bip c ie be)
+setStatus DivisionByZero b (RMSR cc dce _ ice fsl bip c ie be) = (RMSR cc dce b ice fsl bip c ie be)
+setStatus InstructionCacheEnable b (RMSR cc dce dz _ fsl bip c ie be) = (RMSR cc dce dz b fsl bip c ie be)
+setStatus FSLError b (RMSR cc dce dz ice _ bip c ie be) = (RMSR cc dce dz ice b bip c ie be)
+setStatus BreakInProgress b (RMSR cc dce dz ice fsl _ c ie be) = (RMSR cc dce dz ice fsl b c ie be)
+setStatus Carry b (RMSR _ dce dz ice fsl bip _ ie be) = (RMSR b dce dz ice fsl bip b ie be)
+setStatus InterruptEnable b (RMSR cc dce dz ice fsl bip c _ be) = (RMSR cc dce dz ice fsl bip c b be)
+setStatus BuslockEnable b (RMSR cc dce dz ice fsl bip c ie _) = (RMSR cc dce dz ice fsl bip c ie b)
+
+getStatus :: MachineStatusBit -> RMSR -> Bit
+getStatus CarryCopy              = _cc
+getStatus DataCacheEnable        = _dce
+getStatus DivisionByZero         = _dz
+getStatus InstructionCacheEnable = _ice
+getStatus FSLError               = _fsl
+getStatus BreakInProgress        = _bip
+getStatus Carry                  = _c
+getStatus InterruptEnable        = _ie
+getStatus BuslockEnable          = _be
+
+
+setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
+setMSRBit msb b = do
+  (MicroBlaze rs rpc rmsr) <- get
+  let rmsr' = setStatus msb b rmsr
+  put $ MicroBlaze rs rpc rmsr'
+  return ()
+
+getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
+getMSRBit msb = do
+  (MicroBlaze _ _ rmsr) <- get
+  return $ getStatus msb rmsr
 
 
 -- ** Register Specifications
@@ -86,7 +133,7 @@ readRegBlock RB3 (RB _ _ w3 _ _ _ _ _) = w3
 readRegBlock RB4 (RB _ _ _ w4 _ _ _ _) = w4
 readRegBlock RB5 (RB _ _ _ _ w5 _ _ _) = w5
 readRegBlock RB6 (RB _ _ _ _ _ w6 _ _) = w6
-readRegBlock RB7 (RB _ _ _ _ _ _ w7 _) = w7 
+readRegBlock RB7 (RB _ _ _ _ _ _ w7 _) = w7
 readRegBlock RB8 (RB _ _ _ _ _ _ _ w8) = w8
 
 
@@ -128,16 +175,16 @@ writeRegister R31 w (MBRegisters b1 b2 b3 b4) = MBRegisters b1 b2 b3 (writeRegBl
 
 -- | read a given register
 readRegister :: MBReg -> MBRegisters -> MBWord
-readRegister R0 _ = 0
-readRegister R1 (MBRegisters b1 b2 b3 b4) = readRegBlock RB2 b1
-readRegister R2 (MBRegisters b1 b2 b3 b4) = readRegBlock RB3 b1
-readRegister R3 (MBRegisters b1 b2 b3 b4) = readRegBlock RB4 b1
-readRegister R4 (MBRegisters b1 b2 b3 b4) = readRegBlock RB5 b1
-readRegister R5 (MBRegisters b1 b2 b3 b4) = readRegBlock RB6 b1
-readRegister R6 (MBRegisters b1 b2 b3 b4) = readRegBlock RB7 b1
-readRegister R7 (MBRegisters b1 b2 b3 b4) = readRegBlock RB8 b1
-readRegister R8 (MBRegisters b1 b2 b3 b4) = readRegBlock RB1 b2
-readRegister R9 (MBRegisters b1 b2 b3 b4) = readRegBlock RB2 b2
+readRegister R0 _                          = zero32
+readRegister R1 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB2 b1
+readRegister R2 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB3 b1
+readRegister R3 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB4 b1
+readRegister R4 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB5 b1
+readRegister R5 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB6 b1
+readRegister R6 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB7 b1
+readRegister R7 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB8 b1
+readRegister R8 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB1 b2
+readRegister R9 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB2 b2
 readRegister R10 (MBRegisters b1 b2 b3 b4) = readRegBlock RB3 b2
 readRegister R11 (MBRegisters b1 b2 b3 b4) = readRegBlock RB4 b2
 readRegister R12 (MBRegisters b1 b2 b3 b4) = readRegBlock RB5 b2
@@ -162,14 +209,14 @@ readRegister R30 (MBRegisters b1 b2 b3 b4) = readRegBlock RB7 b4
 readRegister R31 (MBRegisters b1 b2 b3 b4) = readRegBlock RB8 b4
 
 
-readRegisterSt :: MBReg -> State MicroBlaze MBWord
-readRegisterSt r = do
+getRegister :: MBReg -> State MicroBlaze MBWord
+getRegister r = do
   (MicroBlaze x _ _) <- get
   return $ readRegister r x
 
 
-writeRegisterSt :: MBReg -> MBWord -> State MicroBlaze ()
-writeRegisterSt r w = do
+setRegister :: MBReg -> MBWord -> State MicroBlaze ()
+setRegister r w = do
   (MicroBlaze rs rpc msr) <- get
   put $ MicroBlaze (writeRegister r w rs) rpc msr
   return ()

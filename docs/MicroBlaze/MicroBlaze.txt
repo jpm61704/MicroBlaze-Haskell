@@ -327,52 +327,57 @@ data MicroBlaze
 MicroBlaze :: MBRegisters -> RPC -> RMSR -> MicroBlaze
 
 -- | Standard word size for MicroBlaze
-type MBWord = Word32
+type MBWord = W32
 
 -- | Program Counter
 type RPC = MBWord
 
 -- | the machine status register
 data RMSR
-RMSR :: Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> RMSR
+RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
 
 -- | arithmetic carry copy (read-only)
-[_cc] :: RMSR -> Bool
+[_cc] :: RMSR -> Bit
 
 -- | data cache enable
-[_dce] :: RMSR -> Bool
+[_dce] :: RMSR -> Bit
 
 -- | division by zero
-[_dz] :: RMSR -> Bool
+[_dz] :: RMSR -> Bit
 
 -- | instruction cache enable
-[_ice] :: RMSR -> Bool
+[_ice] :: RMSR -> Bit
 
 -- | fsl error
-[_fsl] :: RMSR -> Bool
+[_fsl] :: RMSR -> Bit
 
 -- | break in progress
-[_bip] :: RMSR -> Bool
+[_bip] :: RMSR -> Bit
 
 -- | arithmetic carry
-[_c] :: RMSR -> Bool
+[_c] :: RMSR -> Bit
 
 -- | interrupt enable
-[_ie] :: RMSR -> Bool
+[_ie] :: RMSR -> Bit
 
 -- | buslock enable
-[_be] :: RMSR -> Bool
+[_be] :: RMSR -> Bit
+data MachineStatusBit
+CarryCopy :: MachineStatusBit
+DataCacheEnable :: MachineStatusBit
+DivisionByZero :: MachineStatusBit
+InstructionCacheEnable :: MachineStatusBit
+FSLError :: MachineStatusBit
+BreakInProgress :: MachineStatusBit
+Carry :: MachineStatusBit
+InterruptEnable :: MachineStatusBit
+BuslockEnable :: MachineStatusBit
+setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
+getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
 
 -- | The register store for the Microblaze
 data MBRegisters
-
--- | write to a given register note that register zero is persistent
-writeRegister :: MBReg -> MBWord -> MBRegisters -> MBRegisters
-
--- | read a given register
-readRegister :: MBReg -> MBRegisters -> MBWord
-readRegisterSt :: MBReg -> State MBRegisters MBWord
-writeRegisterSt :: MBReg -> MBWord -> State MBRegisters ()
+getRegister :: MBReg -> State MicroBlaze MBWord
+setRegister :: MBReg -> MBWord -> State MicroBlaze ()
 
 module Interpreter
-exec :: Ins -> State MBRegisters ()
