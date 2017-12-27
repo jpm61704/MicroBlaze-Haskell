@@ -1,3 +1,4 @@
+{-# LANGUAGE UnicodeSyntax #-}
 module Boilerplate where
 
 import           Control.Monad.Identity hiding (when)
@@ -368,3 +369,14 @@ w32_lt = error "unimplemented"
 
 w32_ne :: W32 -> W32 -> Bool
 w32_ne = error "unimplemented"
+
+signExtendW16 ∷ W16 → W32
+signExtendW16 w@(W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) =
+  W32 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
+
+notW32 ∷ W32 → W32
+notW32 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31) =
+  (W32 (notBit b0) (notBit b1) (notBit b2) (notBit b3) (notBit b4) (notBit b5) (notBit b6) (notBit b7)
+       (notBit b8) (notBit b9) (notBit b10) (notBit b11) (notBit b12) (notBit b13) (notBit b14) (notBit b15)
+       (notBit b16) (notBit b17) (notBit b18) (notBit b19) (notBit b20) (notBit b21) (notBit b22) (notBit b23)
+       (notBit b24) (notBit b25) (notBit b26) (notBit b27) (notBit b28) (notBit b29) (notBit b30) (notBit b31))
