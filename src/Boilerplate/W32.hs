@@ -39,3 +39,19 @@ signExtendW16 w@(W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) =
         e1 = b1 W8.== c1
         e2 = b2 W8.== c2
         e3 = b3 W8.== c3
+
+isNegative :: W32 -> Bit
+isNegative (W32 b0 _ _ _) = W8.isNegative b0
+
+isPositive ∷ W32 → Bit
+isPositive = B.not P.. isNegative
+
+isZero ∷ W32 → Bit
+isZero = (==) zero
+
+greaterThanZero ∷ W32 → Bit
+greaterThanZero x = B.and (isPositive x) (B.not (isZero x))
+
+lessThanOrEqualToZero ∷ W32 → Bit
+lessThanOrEqualToZero x = B.or (isNegative x) (isZero x)
+

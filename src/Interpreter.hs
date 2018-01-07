@@ -40,10 +40,27 @@ exec (And rd ra rb)     = execTypeA W32.and rd ra rb
 exec (Andi rd ra imm)   = execTypeB W32.and rd ra imm
 exec (Andn rd ra rb)    = execTypeA (\a b→ W32.and a (W32.not b)) rd ra rb
 exec (Andni rd ra imm)  = execTypeB (\a b→ W32.and a (W32.not b)) rd ra imm
-exec (Beq ra rb _)      = branch False (ra, Left rb)   ((W32.==) W32.zero)
-exec (Beqd ra rb _)     = branch True  (ra, Left rb)   ((W32.==) W32.zero)
-exec (Beqi ra imm)      = branch False (ra, Right imm) ((W32.==) W32.zero)
-exec (Beqid ra imm)     = branch True  (ra, Right imm) ((W32.==) W32.zero)
+exec (Beq ra rb _)      = branch (TypeA ra rb) ((W32.==) W32.zero)
+exec (Beqd ra rb _)     = branchWithDelay (TypeA ra rb ) ((W32.==) W32.zero)
+exec (Beqi ra imm)      = branch (TypeB ra imm) ((W32.==) W32.zero)
+exec (Beqid ra imm)     = branchWithDelay (TypeB ra imm) ((W32.==) W32.zero)
+exec (Bge ra rb _)      = branch (TypeA ra rb) W32.isPositive
+exec (Bged ra rb _)     = branchWithDelay (TypeA ra rb) W32.isPositive
+exec (Bgei ra imm)      = branch (TypeB ra imm) W32.isPositive
+exec (Bgeid ra imm)     = branchWithDelay (TypeB ra imm) W32.isPositive
+exec (Bgt ra rb _)      = branch (TypeA ra rb) W32.greaterThanZero
+exec (Bgtd ra rb _)     = branchWithDelay (TypeA ra rb) W32.greaterThanZero
+exec (Bgti ra imm)      = branch (TypeB ra imm) W32.greaterThanZero
+exec (Bgtid ra imm)     = branchWithDelay (TypeB ra imm) W32.greaterThanZero
+exec (Ble ra rb _)      = branch (TypeA ra rb) W32.lessThanOrEqualToZero
+exec (Bled ra rb _)     = branchWithDelay (TypeA ra rb) W32.lessThanOrEqualToZero
+exec (Blei ra imm)      = branch (TypeB ra imm) W32.lessThanOrEqualToZero
+exec (Bleid ra imm)     = branchWithDelay (TypeB ra imm) W32.lessThanOrEqualToZero
+exec (Blt ra rb _)      = branch (TypeA ra rb) W32.isNegative
+exec (Bltd ra rb _)     = branchWithDelay (TypeA ra rb) W32.isNegative
+exec (Blti ra imm)      = branch (TypeB ra imm) W32.isNegative
+exec (Bltid ra imm)     = branchWithDelay (TypeB ra imm) W32.isNegative
+
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -51,19 +68,28 @@ type CarryFlag = Bool
 type KeepFlag = Bool
 type DelayFlag = Bool
 
+data BranchInput = TypeA MBReg MBReg
+                 | TypeB MBReg W16
 
-branch ∷ DelayFlag → (MBReg, (Either MBReg W16)) → (MBWord → Bit) → State MicroBlaze ()
-branch delay (ra, y) branch_test = do
-  a ← getRegister ra
+
+getBranchInputValue ∷ BranchInput → State MicroBlaze W32
+getBranchInputValue (TypeA _ rb)  = getRegister rb
+getBranchInputValue (TypeB _ w16) = return $ W32.signExtendW16 w16
+
+getBranchRegisterA ∷ BranchInput → State MicroBlaze W32
+getBranchRegisterA (TypeA ra _) = getRegister ra
+getBranchRegisterA (TypeB ra _) = getRegister ra
+
+branchWithDelay ∷ BranchInput → (MBWord → Bit) → State MicroBlaze ()
+branchWithDelay input branch_test = setMSRBit DelayEnable S >> branch input branch_test
+
+branch ∷ BranchInput  → (MBWord → Bit) → State MicroBlaze ()
+branch input branch_test = do
+  a ← getBranchRegisterA input
   case branch_test a of
     C -> return ()
     S -> do
-      if delay
-        then setMSRBit DelayEnable S
-        else return ()
-      b ← case y of
-            Left rb   → getRegister rb
-            Right imm → return $ W32.signExtendW16 imm
+      b ← getBranchInputValue input
       pc ← getRPC
       setRPC $ snd $ W32.add b pc C
 

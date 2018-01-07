@@ -76,6 +76,9 @@ subtract (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 c0 c1 c2 c3 c4 c5 c6 c7) ci = (co0,W8 
 negative ∷ W8 → W8
 negative w = P.snd (add (not w) one C)
 
+isNegative :: W8 -> Bit
+isNegative w = (mostSignificantBit w) B.== S
+
 mostSignificantBit ∷ W8 → Bit
 mostSignificantBit (W8 b _ _ _ _ _ _ _) = b
 
