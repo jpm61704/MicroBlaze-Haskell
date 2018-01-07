@@ -1,3 +1,4 @@
+{-# LANGUAGE UnicodeSyntax #-}
 module MachineState(
   -- * Microblaze Machine type
     MicroBlaze(MicroBlaze)
@@ -65,6 +66,7 @@ data RMSR = RMSR { _cc  :: Bit -- ^ arithmetic carry copy (read-only)
                  , _c   :: Bit -- ^ arithmetic carry
                  , _ie  :: Bit -- ^ interrupt enable
                  , _be  :: Bit -- ^ buslock enable
+                 , _de  ∷ Bit -- ^ delay enable (hidden)
                  }
 
 data MachineStatusBit = CarryCopy
@@ -76,19 +78,21 @@ data MachineStatusBit = CarryCopy
                       | Carry
                       | InterruptEnable
                       | BuslockEnable
+                      | DelayEnable
 
 
 -- | sets the machine status bit indicated to the desired boolean value
 setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
 setStatus CarryCopy _ rmsr = rmsr
-setStatus DataCacheEnable b (RMSR cc _ dz ice fsl bip c ie be) = (RMSR cc b dz ice fsl bip c ie be)
-setStatus DivisionByZero b (RMSR cc dce _ ice fsl bip c ie be) = (RMSR cc dce b ice fsl bip c ie be)
-setStatus InstructionCacheEnable b (RMSR cc dce dz _ fsl bip c ie be) = (RMSR cc dce dz b fsl bip c ie be)
-setStatus FSLError b (RMSR cc dce dz ice _ bip c ie be) = (RMSR cc dce dz ice b bip c ie be)
-setStatus BreakInProgress b (RMSR cc dce dz ice fsl _ c ie be) = (RMSR cc dce dz ice fsl b c ie be)
-setStatus Carry b (RMSR _ dce dz ice fsl bip _ ie be) = (RMSR b dce dz ice fsl bip b ie be)
-setStatus InterruptEnable b (RMSR cc dce dz ice fsl bip c _ be) = (RMSR cc dce dz ice fsl bip c b be)
-setStatus BuslockEnable b (RMSR cc dce dz ice fsl bip c ie _) = (RMSR cc dce dz ice fsl bip c ie b)
+setStatus DataCacheEnable b (RMSR cc _ dz ice fsl bip c ie be de) = (RMSR cc b dz ice fsl bip c ie be de)
+setStatus DivisionByZero b (RMSR cc dce _ ice fsl bip c ie be de) = (RMSR cc dce b ice fsl bip c ie be de)
+setStatus InstructionCacheEnable b (RMSR cc dce dz _ fsl bip c ie be de) = (RMSR cc dce dz b fsl bip c ie be de)
+setStatus FSLError b (RMSR cc dce dz ice _ bip c ie be de) = (RMSR cc dce dz ice b bip c ie be de)
+setStatus BreakInProgress b (RMSR cc dce dz ice fsl _ c ie be de) = (RMSR cc dce dz ice fsl b c ie be de)
+setStatus Carry b (RMSR _ dce dz ice fsl bip _ ie be de) = (RMSR b dce dz ice fsl bip b ie be de)
+setStatus InterruptEnable b (RMSR cc dce dz ice fsl bip c _ be de) = (RMSR cc dce dz ice fsl bip c b be de)
+setStatus BuslockEnable b (RMSR cc dce dz ice fsl bip c ie _ de) = (RMSR cc dce dz ice fsl bip c ie b de)
+setStatus DelayEnable b (RMSR cc dce dz ice fsl bip c ie be _) = (RMSR cc dce dz ice fsl bip c ie be b)
 
 getStatus :: MachineStatusBit -> RMSR -> Bit
 getStatus CarryCopy              = _cc
@@ -242,7 +246,7 @@ setRegister r w = do
 
 
 emptyRMSR :: RMSR
-emptyRMSR = RMSR C C C C C C C C C
+emptyRMSR = RMSR C C C C C C C C C C
 
 emptyRB :: RegBlock
 emptyRB = RB zero32 zero32 zero32 zero32 zero32 zero32 zero32 zero32

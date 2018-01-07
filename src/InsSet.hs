@@ -1,6 +1,8 @@
 module InsSet where
 
 import           Boilerplate
+import           Boilerplate.Bit as B
+import           Boilerplate.W32 as W32
 import           Data.Int
 
 type Label = String
