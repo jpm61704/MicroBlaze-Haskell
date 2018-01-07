@@ -9,77 +9,86 @@
 @package MicroBlaze
 @version 0.1.0.0
 
+module MBWord
+newtype MBWord
+MBWord :: Word32 -> MBWord
+newtype CarryBit
+CarryBit :: Bool -> CarryBit
+add :: MBWord -> MBWord -> CarryBit -> MBWord
+w1 :: MBWord
+w2 :: MBWord
+instance GHC.Show.Show MBWord.MBWord
+
 module Boilerplate
+
+-- | Standard Bit Datatype Supporting functions can be found in
+--   Boilerplate.Bit
 data Bit
 C :: Bit
 S :: Bit
-notBit :: Bit -> Bit
-eqBit :: Bit -> Bit -> Bit
-andBit :: Bit -> Bit -> Bit
-orBit :: Bit -> Bit -> Bit
-xorBit :: Bit -> Bit -> Bit
-plusCBit :: Bit -> Bit -> Bit -> (Bit, Bit)
-minusCBit :: Bit -> Bit -> Bit -> (Bit, Bit)
+
+-- | Standard Byte defintion Supporting functions can be found in
+--   Boilerplate.W8
 data W8
 W8 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W8
-zeroW8 :: W8
-oneW8 :: W8
-notW8 :: W8 -> W8
-andW8 :: W8 -> W8 -> W8
-xorW8 :: W8 -> W8 -> W8
-eqW8 :: W8 -> W8 -> Bit
-rolW8 :: W8 -> W8
-rorW8 :: W8 -> W8
-plusCW8 :: W8 -> W8 -> Bit -> (Bit, W8)
+data W16
+W16 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W16
 data W32
-W32 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W32
-w32_0 :: W32
-w32_4 :: W32
-w32_8 :: W32
-plusW32 :: W32 -> W32 -> Bit -> W32
-plusCW32 :: W32 -> W32 -> Bit -> (Bit, W32)
-andW32 :: W32 -> W32 -> W32
-orW32 :: W32 -> W32 -> W32
-plusW8 :: W8 -> W8 -> (Bit, W8)
-negW8 :: W8 -> W8
-minusCW8 :: W8 -> W8 -> Bit -> (Bit, W8)
-shlCW8 :: W8 -> Bit -> (Bit, W8)
-shrCW8 :: W8 -> Bit -> (Bit, W8)
-msbW8 :: W8 -> Bit
-lsbW8 :: W8 -> Bit
-(<>) :: (Monad m) => (a -> m b) -> (b -> m c) -> a -> m c
-top6 :: W32 -> W6
-byte0 :: W32 -> W8
-byte1 :: W32 -> W8
-byte2 :: W32 -> W8
-byte3 :: W32 -> W8
+W32 :: W8 -> W8 -> W8 -> W8 -> W32
 data W5
 W5 :: Bit -> Bit -> Bit -> Bit -> Bit -> W5
 data W6
 W6 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W6
 data W11
 W11 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W11
-data W16
-W16 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W16
 data W26
 W26 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W26
-zero16 :: W16
-zero32 :: W32
-one32 :: W32
-(||) :: W16 -> W16 -> W32
-w32_lte :: W32 -> W32 -> Bool
-w32_lt :: W32 -> W32 -> Bool
-w32_ne :: W32 -> W32 -> Bool
-instance GHC.Show.Show Boilerplate.W16
+instance GHC.Show.Show Boilerplate.W26
 instance GHC.Show.Show Boilerplate.W11
-instance GHC.Classes.Eq Boilerplate.W5
-instance GHC.Show.Show Boilerplate.W32
-instance GHC.Classes.Eq Boilerplate.W32
-instance GHC.Show.Show Boilerplate.W8
-instance GHC.Enum.Enum Boilerplate.Bit
-instance GHC.Classes.Eq Boilerplate.Bit
-instance GHC.Show.Show Boilerplate.Bit
+instance GHC.Show.Show Boilerplate.W6
 instance GHC.Show.Show Boilerplate.W5
+instance GHC.Show.Show Boilerplate.W32
+instance GHC.Show.Show Boilerplate.W16
+instance GHC.Show.Show Boilerplate.W8
+instance GHC.Show.Show Boilerplate.Bit
+
+module Boilerplate.Bit
+
+-- | bit negation <tt> not S = C not C = S </tt>
+not :: Bit -> Bit
+(==) :: Bit -> Bit -> Bit
+and :: Bit -> Bit -> Bit
+or :: Bit -> Bit -> Bit
+xor :: Bit -> Bit -> Bit
+plus :: Bit -> Bit -> Bit -> (Bit, Bit)
+minus :: Bit -> Bit -> Bit -> (Bit, Bit)
+
+module Boilerplate.W8
+zero :: W8
+one :: W8
+not :: W8 -> W8
+and :: W8 -> W8 -> W8
+or :: W8 -> W8 -> W8
+xor :: W8 -> W8 -> W8
+(==) :: W8 -> W8 -> Bit
+rotateLeft :: W8 -> W8
+rotateRight :: W8 -> W8
+shiftLeft :: W8 -> Bit -> (Bit, W8)
+shiftRight :: W8 -> Bit -> (Bit, W8)
+add :: W8 -> W8 -> Bit -> (Bit, W8)
+subtract :: W8 -> W8 -> Bit -> (Bit, W8)
+negative :: W8 -> W8
+mostSignificantBit :: W8 -> Bit
+leastSignificantBit :: W8 -> Bit
+
+module Boilerplate.W32
+zero :: W32
+add :: W32 -> W32 -> Bit -> (Bit, W32)
+and :: W32 -> W32 -> W32
+or :: W32 -> W32 -> W32
+not :: W32 -> W32
+signExtendW16 :: W16 -> W32
+(==) :: W32 -> W32 -> Bit
 
 module InsSet
 type Label = String
@@ -337,34 +346,7 @@ setRPC :: MBWord -> State MicroBlaze ()
 
 -- | the machine status register
 data RMSR
-RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
-
--- | arithmetic carry copy (read-only)
-[_cc] :: RMSR -> Bit
-
--- | data cache enable
-[_dce] :: RMSR -> Bit
-
--- | division by zero
-[_dz] :: RMSR -> Bit
-
--- | instruction cache enable
-[_ice] :: RMSR -> Bit
-
--- | fsl error
-[_fsl] :: RMSR -> Bit
-
--- | break in progress
-[_bip] :: RMSR -> Bit
-
--- | arithmetic carry
-[_c] :: RMSR -> Bit
-
--- | interrupt enable
-[_ie] :: RMSR -> Bit
-
--- | buslock enable
-[_be] :: RMSR -> Bit
+RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
 emptyRMSR :: RMSR
 data MachineStatusBit
 CarryCopy :: MachineStatusBit
@@ -376,6 +358,7 @@ BreakInProgress :: MachineStatusBit
 Carry :: MachineStatusBit
 InterruptEnable :: MachineStatusBit
 BuslockEnable :: MachineStatusBit
+DelayEnable :: MachineStatusBit
 setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
 getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
 
@@ -386,7 +369,19 @@ getRegister :: MBReg -> State MicroBlaze MBWord
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
 
 module Interpreter
+type Op = W32 -> W32 -> W32
+execTypeA :: Op -> MBReg -> MBReg -> MBReg -> State MicroBlaze ()
+execTypeB :: Op -> MBReg -> MBReg -> W16 -> State MicroBlaze ()
+
+-- | note that all exec does is process the given instructions as it can
+--   given the machine state information. Delays and other temporal actions
+--   must be handled at a different level of the program
 exec :: Ins -> State MicroBlaze ()
+type CarryFlag = Bool
+type KeepFlag = Bool
+type DelayFlag = Bool
+branch :: DelayFlag -> (MBReg, Either MBReg W16) -> (MBWord -> Bit) -> State MicroBlaze ()
+add :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
 
 module TestData
 quickTest :: State MicroBlaze W32
