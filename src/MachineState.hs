@@ -25,6 +25,7 @@ module MachineState(
   ) where
 
 import           Boilerplate
+import qualified Boilerplate.W32          as W32
 import           Control.Monad.State.Lazy
 import           InsSet
 
@@ -38,7 +39,7 @@ data MicroBlaze = MicroBlaze MBRegisters RPC RMSR
 type MBWord = W32
 
 newMicroBlaze :: MicroBlaze
-newMicroBlaze = MicroBlaze emptyRegisters zero32 emptyRMSR
+newMicroBlaze = MicroBlaze emptyRegisters W32.zero emptyRMSR
 
 -- | Program Counter
 type RPC = MBWord
@@ -197,7 +198,7 @@ writeRegister R31 w (MBRegisters b1 b2 b3 b4) = MBRegisters b1 b2 b3 (writeRegBl
 
 -- | read a given register
 readRegister :: MBReg -> MBRegisters -> MBWord
-readRegister R0 _                          = zero32
+readRegister R0 _                          = W32.zero
 readRegister R1 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB2 b1
 readRegister R2 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB3 b1
 readRegister R3 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB4 b1
@@ -249,7 +250,7 @@ emptyRMSR :: RMSR
 emptyRMSR = RMSR C C C C C C C C C C
 
 emptyRB :: RegBlock
-emptyRB = RB zero32 zero32 zero32 zero32 zero32 zero32 zero32 zero32
+emptyRB = RB W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero
 
 emptyRegisters :: MBRegisters
 emptyRegisters = MBRegisters emptyRB emptyRB emptyRB emptyRB

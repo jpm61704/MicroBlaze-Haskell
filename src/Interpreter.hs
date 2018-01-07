@@ -2,6 +2,7 @@
 module Interpreter where
 
 import           Boilerplate
+import qualified Boilerplate.W32          as W32
 import           Control.Monad.State.Lazy
 import           InsSet
 import           MachineState
@@ -18,7 +19,7 @@ execTypeA op rd ra rb = do
 execTypeB ∷ Op → MBReg → MBReg → W16 → State MicroBlaze ()
 execTypeB op dest ra imm = do
   a ← getRegister ra
-  let b = signExtendW16 imm
+  let b = W32.signExtendW16 imm
   setRegister dest $ op a b
 
 
@@ -35,14 +36,14 @@ exec (Addi rd ra imm)   = add False False (ra, Right imm) rd
 exec (Addic rd ra imm)  = add True False (ra, Right imm) rd
 exec (Addik rd ra imm)  = add False True (ra, Right imm) rd
 exec (Addikc rd ra imm) = add True True (ra, Right imm) rd
-exec (And rd ra rb)     = execTypeA andW32 rd ra rb
-exec (Andi rd ra imm)   = execTypeB andW32 rd ra imm
-exec (Andn rd ra rb)    = execTypeA (\a b→ andW32 a (notW32 b)) rd ra rb
-exec (Andni rd ra imm)  = execTypeB (\a b→ andW32 a (notW32 b)) rd ra imm
-exec (Beq ra rb _)      = branch False (ra, Left rb)   ((==) zero32)
-exec (Beqd ra rb _)     = branch True  (ra, Left rb)   ((==) zero32)
-exec (Beqi ra imm)      = branch False (ra, Right imm) ((==) zero32)
-exec (Beqid ra imm)     = branch True  (ra, Right imm) ((==) zero32)
+exec (And rd ra rb)     = execTypeA W32.and rd ra rb
+exec (Andi rd ra imm)   = execTypeB W32.and rd ra imm
+exec (Andn rd ra rb)    = execTypeA (\a b→ W32.and a (W32.not b)) rd ra rb
+exec (Andni rd ra imm)  = execTypeB (\a b→ W32.and a (W32.not b)) rd ra imm
+exec (Beq ra rb _)      = branch False (ra, Left rb)   ((W32.==) W32.zero)
+exec (Beqd ra rb _)     = branch True  (ra, Left rb)   ((W32.==) W32.zero)
+exec (Beqi ra imm)      = branch False (ra, Right imm) ((W32.==) W32.zero)
+exec (Beqid ra imm)     = branch True  (ra, Right imm) ((W32.==) W32.zero)
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -51,20 +52,21 @@ type KeepFlag = Bool
 type DelayFlag = Bool
 
 
-branch ∷ DelayFlag → (MBReg, (Either MBReg W16)) → (MBWord → Bool) → State MicroBlaze ()
+branch ∷ DelayFlag → (MBReg, (Either MBReg W16)) → (MBWord → Bit) → State MicroBlaze ()
 branch delay (ra, y) branch_test = do
   a ← getRegister ra
-  if branch_test a
-    then do
+  case branch_test a of
+    C -> return ()
+    S -> do
       if delay
         then setMSRBit DelayEnable S
         else return ()
       b ← case y of
             Left rb   → getRegister rb
-            Right imm → return $ signExtendW16 imm
+            Right imm → return $ W32.signExtendW16 imm
       pc ← getRPC
-      setRPC $ plusW32 b pc C
-    else return ()
+      setRPC $ snd $ W32.add b pc C
+
 
 
 add :: CarryFlag → KeepFlag → (MBReg, Either MBReg W16) → MBReg → State MicroBlaze ()
@@ -72,9 +74,9 @@ add carry keep (ra, y) rd = do
   a ← getRegister ra
   b ← case y of
         Left rb   → getRegister rb
-        Right imm → return $ signExtendW16 imm
+        Right imm → return $ W32.signExtendW16 imm
   c ← if carry then getMSRBit Carry else return C
-  let (carry_out, output) = plusCW32 a b c
+  let (carry_out, output) = W32.add a b c
   setRegister rd output
   if keep
     then return ()
