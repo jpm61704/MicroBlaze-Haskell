@@ -22,6 +22,11 @@ module MachineState(
   -- *** Register Manipulation
   , getRegister
   , setRegister
+
+  -- ** Memory Managment
+  , loadWord
+  , loadHalfWord
+  , loadByte
   ) where
 
 import           Boilerplate
@@ -254,3 +259,12 @@ emptyRB = RB W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.
 
 emptyRegisters :: MBRegisters
 emptyRegisters = MBRegisters emptyRB emptyRB emptyRB emptyRB
+
+loadWord ∷ W32 → State MicroBlaze W32
+loadWord = undefined
+
+loadHalfWord ∷ W32 → State MicroBlaze W16
+loadHalfWord = undefined
+
+loadByte ∷ W32 → State MicroBlaze W8
+loadByte = undefined

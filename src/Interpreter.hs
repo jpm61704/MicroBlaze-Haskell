@@ -87,7 +87,14 @@ exec (Bsrai rd ra imm)  = error $ "barrel shifts not yet implemented"
 exec (Bslli rd ra imm)  = error $ "barrel shifts not yet implemented"
 exec (Cmp rd ra rb)     = execTypeA W32.signedCompare rd ra rb
 exec (Cmpu rd ra rb)    = execTypeA W32.unsignedCompare rd ra rb
-
+exec (Get rd fslx)      = error $ "fsl instructions not yet implemented"
+exec (Nget rd fslx)     = error $ "fsl instructions not yet implemented"
+exec (Cget rd fslx)     = error $ "fsl instructions not yet implemented"
+exec (Ncget rd fslx)    = error $ "fsl instructions not yet implemented"
+exec (Idiv rd ra rb)    = error $ "requires hardware divider implementation"
+exec (Idivu rd ra rb)   = error $ "requires hardware divider implementation"
+exec (Imm imm)          = setRegister R18 (W32.backExtendW16 imm) -- NOTE: I may want to set a flag here
+exec (Lbu rd ra rb)     = load (LByte W32.unsignedExtendW8) rd ra (Register rb)
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -146,7 +153,29 @@ add carry keep (ra, y) rd = do
     then return ()
     else setMSRBit Carry carry_out
 
+data LoadSize = LWord
+              | LHalfWord (W16 → W32)
+              | LByte (W8 → W32)
 
+data ImmOrReg  = Register  MBReg
+               | Immediate W16
+
+load :: LoadSize → MBReg → MBReg → ImmOrReg  → State MicroBlaze ()
+load s rd ra y = do
+  a ← getRegister ra
+  b ← case y of
+        Register rb   → getRegister rb
+        Immediate imm → return (W32.signExtendW16 imm)
+  let address = snd $ W32.add a b C
+  val ← case s of
+              LWord            → loadWord address
+              LHalfWord extend → do
+                x ← loadHalfWord address
+                return $ extend x
+              LByte extend     → do
+                x ← loadByte address
+                return $ extend x
+  setRegister rd val
 
 
 

@@ -78,17 +78,31 @@ shiftRight :: W8 -> Bit -> (Bit, W8)
 add :: W8 -> W8 -> Bit -> (Bit, W8)
 subtract :: W8 -> W8 -> Bit -> (Bit, W8)
 negative :: W8 -> W8
+isNegative :: W8 -> Bit
 mostSignificantBit :: W8 -> Bit
 leastSignificantBit :: W8 -> Bit
 
 module Boilerplate.W32
 zero :: W32
+one :: W32
 add :: W32 -> W32 -> Bit -> (Bit, W32)
 and :: W32 -> W32 -> W32
 or :: W32 -> W32 -> W32
 not :: W32 -> W32
 signExtendW16 :: W16 -> W32
+unsignedExtendW16 :: W16 -> W32
+signExtendW8 :: W8 -> W32
+unsignedExtendW8 :: W8 -> W32
+backExtendW16 :: W16 -> W32
 (==) :: W32 -> W32 -> Bit
+subtract :: W32 -> W32 -> Bit -> (Bit, W32)
+signedCompare :: W32 -> W32 -> W32
+unsignedCompare :: W32 -> W32 -> W32
+isNegative :: W32 -> Bit
+isPositive :: W32 -> Bit
+isZero :: W32 -> Bit
+greaterThanZero :: W32 -> Bit
+lessThanOrEqualToZero :: W32 -> Bit
 
 module InsSet
 type Label = String
@@ -159,7 +173,7 @@ R16 :: MBReg
 -- | Dedicated, Return address for Exceptions
 R17 :: MBReg
 
--- | Dedicated, Reserved for assembler
+-- | Dedicated, Reserved for assembler, used for Imm instruction
 R18 :: MBReg
 
 -- | Non-volatile, must be saved across function calls
@@ -259,25 +273,13 @@ Bsrai :: MBReg -> MBReg -> W16 -> Ins
 Bslli :: MBReg -> MBReg -> W16 -> Ins
 Cmp :: MBReg -> MBReg -> MBReg -> Ins
 Cmpu :: MBReg -> MBReg -> MBReg -> Ins
-Fadd :: MBReg -> MBReg -> MBReg -> Ins
-Frsub :: MBReg -> MBReg -> MBReg -> Ins
-Fmul :: MBReg -> MBReg -> MBReg -> Ins
-Fdiv :: MBReg -> MBReg -> MBReg -> Ins
-Fcmpun :: MBReg -> MBReg -> MBReg -> Ins
-Fcmplt :: MBReg -> MBReg -> MBReg -> Ins
-Fcmpeq :: MBReg -> MBReg -> MBReg -> Ins
-Fcmple :: MBReg -> MBReg -> MBReg -> Ins
-Fcmpgt :: MBReg -> MBReg -> MBReg -> Ins
-Fcmpne :: MBReg -> MBReg -> MBReg -> Ins
-Fcmpge :: MBReg -> MBReg -> MBReg -> Ins
-Flt :: MBReg -> MBReg -> Ins
-Fint :: MBReg -> MBReg -> Ins
-Fsqrt :: MBReg -> MBReg -> Ins
 Get :: MBReg -> Int -> Ins
-Getd :: MBReg -> Int -> Ins
+Nget :: MBReg -> Int -> Ins
+Cget :: MBReg -> Int -> Ins
+Ncget :: MBReg -> Int -> Ins
 Idiv :: MBReg -> MBReg -> MBReg -> Ins
 Idivu :: MBReg -> MBReg -> MBReg -> Ins
-Imm :: Ins
+Imm :: W16 -> Ins
 Lbu :: MBReg -> MBReg -> MBReg -> Ins
 Lbui :: MBReg -> MBReg -> W16 -> Ins
 Lhu :: MBReg -> MBReg -> MBReg -> Ins
@@ -367,6 +369,9 @@ data MBRegisters
 emptyRegisters :: MBRegisters
 getRegister :: MBReg -> State MicroBlaze MBWord
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
+loadWord :: W32 -> State MicroBlaze W32
+loadHalfWord :: W32 -> State MicroBlaze W16
+loadByte :: W32 -> State MicroBlaze W8
 
 module Interpreter
 type Op = W32 -> W32 -> W32
@@ -380,8 +385,27 @@ exec :: Ins -> State MicroBlaze ()
 type CarryFlag = Bool
 type KeepFlag = Bool
 type DelayFlag = Bool
-branch :: DelayFlag -> (MBReg, Either MBReg W16) -> (MBWord -> Bit) -> State MicroBlaze ()
+data BranchInput
+TypeA :: MBReg -> MBReg -> BranchInput
+TypeB :: MBReg -> W16 -> BranchInput
+data AbsoluteBranchInput
+AbsR :: MBReg -> AbsoluteBranchInput
+AbsI :: W16 -> AbsoluteBranchInput
+link :: MBReg -> State MicroBlaze ()
+delay :: State MicroBlaze ()
+getBranchInputValue :: BranchInput -> State MicroBlaze W32
+getBranchRegisterA :: BranchInput -> State MicroBlaze W32
+absoluteBranch :: AbsoluteBranchInput -> State MicroBlaze ()
+branch :: BranchInput -> (MBWord -> Bit) -> State MicroBlaze ()
 add :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
+data LoadSize
+LWord :: LoadSize
+LHalfWord :: (W16 -> W32) -> LoadSize
+LByte :: (W8 -> W32) -> LoadSize
+data ImmOrReg
+Register :: MBReg -> ImmOrReg
+Immediate :: W16 -> ImmOrReg
+load :: LoadSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
 
 module TestData
 quickTest :: State MicroBlaze W32

@@ -61,7 +61,7 @@ data MBReg = R0 -- ^ Dedicated, Value 0
            | R15 -- ^ Dedicated, Return address for Sub-routine
            | R16 -- ^ Dedicated, Return address for Trap (Debugger)
            | R17 -- ^ Dedicated, Return address for Exceptions
-           | R18 -- ^ Dedicated, Reserved for assembler
+           | R18 -- ^ Dedicated, Reserved for assembler, used for Imm instruction
            | R19 -- ^ Non-volatile, must be saved across function calls
            | R20 -- ^ Non-volatile, must be saved across function calls
            | R21 -- ^ Non-volatile, must be saved across function calls
@@ -144,7 +144,7 @@ data Ins  = Add MBReg MBReg MBReg
           | Bslli MBReg MBReg W16
           | Cmp MBReg MBReg MBReg
           | Cmpu MBReg MBReg MBReg
-          | Fadd MBReg MBReg MBReg
+{-        | Fadd MBReg MBReg MBReg
           | Frsub MBReg MBReg MBReg
           | Fmul MBReg MBReg MBReg
           | Fdiv MBReg MBReg MBReg
@@ -161,12 +161,17 @@ data Ins  = Add MBReg MBReg MBReg
           | Flt MBReg MBReg
           | Fint MBReg MBReg
           | Fsqrt MBReg MBReg
+-}
           -- get from the FSL interface:
           | Get MBReg Int
-          | Getd MBReg Int
+          | Nget MBReg Int
+          | Cget MBReg Int
+          | Ncget MBReg Int
+
+--        | Getd MBReg Int
           | Idiv MBReg MBReg MBReg
           | Idivu MBReg MBReg MBReg
-          | Imm
+          | Imm W16
           | Lbu MBReg MBReg MBReg
           | Lbui MBReg MBReg W16
           | Lhu MBReg MBReg MBReg

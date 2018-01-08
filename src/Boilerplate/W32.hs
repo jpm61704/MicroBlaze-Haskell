@@ -36,6 +36,22 @@ signExtendW16 w@(W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) =
   W32 byte0 byte0 (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 b8 b9 b10 b11 b12 b13 b14 b15)
   where byte0 = W8 b0 b0 b0 b0 b0 b0 b0 b0
 
+unsignedExtendW16 ∷ W16 → W32
+unsignedExtendW16 (W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) = W32 W8.zero W8.zero (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 b8 b9 b10 b11 b12 b13 b14 b15)
+
+
+signExtendW8 ∷ W8 → W32
+signExtendW8 w@(W8 b0 b1 b2 b3 b4 b5 b6 b7) =
+  W32 byte0 byte0 byte0 (W8 b0 b1 b2 b3 b4 b5 b6 b7)
+  where byte0 = W8 b0 b0 b0 b0 b0 b0 b0 b0
+
+unsignedExtendW8 ∷ W8 → W32
+unsignedExtendW8 (W8 b0 b1 b2 b3 b4 b5 b6 b7) = W32 W8.zero W8.zero W8.zero (W8 b0 b1 b2 b3 b4 b5 b6 b7)
+
+
+backExtendW16 ∷ W16 → W32
+backExtendW16 (W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) = W32 (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 b8 b9 b10 b11 b12 b13 b14 b15) W8.zero W8.zero
+
 (==) :: W32 -> W32 -> Bit
 (W32 b0 b1 b2 b3) == (W32 c0 c1 c2 c3) = B.and (B.and e0 e1) (B.and e2 e3)
   where e0 = b0 W8.== c0
