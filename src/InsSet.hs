@@ -148,7 +148,6 @@ data Ins  = Add MBReg MBReg MBReg
           | Frsub MBReg MBReg MBReg
           | Fmul MBReg MBReg MBReg
           | Fdiv MBReg MBReg MBReg
-
           -- the following seven need a '.' before the last two characters
           -- in the code when put to formatted strings:
           | Fcmpun MBReg MBReg MBReg
@@ -162,39 +161,30 @@ data Ins  = Add MBReg MBReg MBReg
           | Flt MBReg MBReg
           | Fint MBReg MBReg
           | Fsqrt MBReg MBReg
-
           -- get from the FSL interface:
           | Get MBReg Int
           | Getd MBReg Int
-
           | Idiv MBReg MBReg MBReg
           | Idivu MBReg MBReg MBReg
-
           | Imm
-
           | Lbu MBReg MBReg MBReg
           | Lbui MBReg MBReg W16
           | Lhu MBReg MBReg MBReg
           | Lhui MBReg MBReg W16
           | Lw MBReg MBReg MBReg
           | Lwi MBReg MBReg W16
-
           | Mfs MBReg MBReg
           | Msrclr MBReg W16
           | Msrset MBReg W16
           | Mts MBReg W16
-
           | Mul MBReg MBReg MBReg
           | Mulhu MBReg MBReg MBReg
           | Mulhsu MBReg MBReg MBReg
           | Muli MBReg MBReg W16
-
           | Or MBReg MBReg MBReg
           | Ori MBReg MBReg W16
-
           | Pcmpbf MBReg MBReg MBReg
           | Pcmpne MBReg MBReg MBReg
-
           -- put to FSL interface:
           | Put MBReg Int
           | Putd MBReg MBReg Int
@@ -202,32 +192,25 @@ data Ins  = Add MBReg MBReg MBReg
           | Rsubc MBReg MBReg MBReg
           | Rsubk MBReg MBReg MBReg
           | Rsubkc MBReg MBReg MBReg
-
           | Rsubi MBReg MBReg W16
           | Rsubic MBReg MBReg W16
           | Rsubik MBReg MBReg W16
           | Rsubikc MBReg MBReg W16
-
           | Rtbd MBReg W16
           | Rtid MBReg W16
           | Rted MBReg W16
           | Rtsd MBReg W16
-
           | Sb MBReg MBReg MBReg
           | Sbi MBReg MBReg W16
           | Sext16 MBReg MBReg
-
           | Sh MBReg MBReg MBReg
           | Shi MBReg MBReg W16
-
           | Sra MBReg MBReg
           | Src MBReg MBReg
           | Sw MBReg MBReg MBReg
           | Swi MBReg MBReg W16
-
           | Wdc MBReg MBReg
           | Wic MBReg MBReg
-
           | Xor MBReg MBReg MBReg
           | Xori MBReg MBReg W16
           deriving Show

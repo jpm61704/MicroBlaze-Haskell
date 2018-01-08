@@ -2,6 +2,7 @@
 module Interpreter where
 
 import           Boilerplate
+import qualified Boilerplate.Bit          as B
 import qualified Boilerplate.W32          as W32
 import           Control.Monad.State.Lazy
 import           InsSet
@@ -41,26 +42,43 @@ exec (Andi rd ra imm)   = execTypeB W32.and rd ra imm
 exec (Andn rd ra rb)    = execTypeA (\a b→ W32.and a (W32.not b)) rd ra rb
 exec (Andni rd ra imm)  = execTypeB (\a b→ W32.and a (W32.not b)) rd ra imm
 exec (Beq ra rb _)      = branch (TypeA ra rb) ((W32.==) W32.zero)
-exec (Beqd ra rb _)     = branchWithDelay (TypeA ra rb ) ((W32.==) W32.zero)
+exec (Beqd ra rb _)     = delay >> branch (TypeA ra rb ) ((W32.==) W32.zero)
 exec (Beqi ra imm)      = branch (TypeB ra imm) ((W32.==) W32.zero)
-exec (Beqid ra imm)     = branchWithDelay (TypeB ra imm) ((W32.==) W32.zero)
+exec (Beqid ra imm)     = delay >> branch (TypeB ra imm) ((W32.==) W32.zero)
 exec (Bge ra rb _)      = branch (TypeA ra rb) W32.isPositive
-exec (Bged ra rb _)     = branchWithDelay (TypeA ra rb) W32.isPositive
+exec (Bged ra rb _)     = delay >> branch (TypeA ra rb) W32.isPositive
 exec (Bgei ra imm)      = branch (TypeB ra imm) W32.isPositive
-exec (Bgeid ra imm)     = branchWithDelay (TypeB ra imm) W32.isPositive
+exec (Bgeid ra imm)     = delay >> branch (TypeB ra imm) W32.isPositive
 exec (Bgt ra rb _)      = branch (TypeA ra rb) W32.greaterThanZero
-exec (Bgtd ra rb _)     = branchWithDelay (TypeA ra rb) W32.greaterThanZero
+exec (Bgtd ra rb _)     = delay >> branch (TypeA ra rb) W32.greaterThanZero
 exec (Bgti ra imm)      = branch (TypeB ra imm) W32.greaterThanZero
-exec (Bgtid ra imm)     = branchWithDelay (TypeB ra imm) W32.greaterThanZero
+exec (Bgtid ra imm)     = delay >> branch (TypeB ra imm) W32.greaterThanZero
 exec (Ble ra rb _)      = branch (TypeA ra rb) W32.lessThanOrEqualToZero
-exec (Bled ra rb _)     = branchWithDelay (TypeA ra rb) W32.lessThanOrEqualToZero
+exec (Bled ra rb _)     = delay >> branch (TypeA ra rb) W32.lessThanOrEqualToZero
 exec (Blei ra imm)      = branch (TypeB ra imm) W32.lessThanOrEqualToZero
-exec (Bleid ra imm)     = branchWithDelay (TypeB ra imm) W32.lessThanOrEqualToZero
+exec (Bleid ra imm)     = delay >> branch (TypeB ra imm) W32.lessThanOrEqualToZero
 exec (Blt ra rb _)      = branch (TypeA ra rb) W32.isNegative
-exec (Bltd ra rb _)     = branchWithDelay (TypeA ra rb) W32.isNegative
+exec (Bltd ra rb _)     = delay >> branch (TypeA ra rb) W32.isNegative
 exec (Blti ra imm)      = branch (TypeB ra imm) W32.isNegative
-exec (Bltid ra imm)     = branchWithDelay (TypeB ra imm) W32.isNegative
-
+exec (Bltid ra imm)     = delay >> branch (TypeB ra imm) W32.isNegative
+exec (Bne ra rb _)      = branch (TypeA ra rb) (\x → B.not (x W32.== W32.zero))
+exec (Bned ra rb _)     = delay >> branch (TypeA ra rb) (\x → B.not (x W32.== W32.zero))
+exec (Bnei ra imm)      = branch (TypeB ra imm) (\x → B.not (x W32.== W32.zero))
+exec (Bneid ra imm)     = delay >> branch (TypeB ra imm) (\x → B.not (x W32.== W32.zero))
+exec (Br rb)            = branch (TypeA undefined rb) (\x → S)
+exec (Bra rb)           = absoluteBranch (AbsR rb)
+exec (Brd rb)           = delay >> branch (TypeA undefined rb) (\x → S)
+exec (Brad rb)          = delay >> absoluteBranch (AbsR rb)
+exec (Brld rd rb)       = (link rd) >> delay >> branch (TypeA undefined rb) (\x → S)
+exec (Brald rd rb)      = (link rd) >> delay >> absoluteBranch (AbsR rb)
+exec (Bri imm)          = branch (TypeB undefined imm) (\x → S)
+exec (Brai imm)         = absoluteBranch (AbsI imm)
+exec (Brid imm)         = delay >> branch (TypeB undefined imm) (\x → S)
+exec (Braid imm)        = delay >> absoluteBranch (AbsI imm)
+exec (Brlid rd imm)     = (link rd) >> delay >> branch (TypeB undefined imm) (\x → S)
+exec (Bralid rd imm)    = (link rd) >> delay >> absoluteBranch (AbsI imm)
+exec (Brk rd rb)        = link rd >> getRegister rb >>= setRPC >> setMSRBit BreakInProgress S
+exec (Brki rd imm)      = link rd >> setRPC (W32.signExtendW16 imm) >> setMSRBit BreakInProgress S
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -71,6 +89,16 @@ type DelayFlag = Bool
 data BranchInput = TypeA MBReg MBReg
                  | TypeB MBReg W16
 
+data AbsoluteBranchInput = AbsR MBReg
+                         | AbsI W16
+
+link ∷ MBReg → State MicroBlaze ()
+link rd = do
+  pc ← getRPC
+  setRegister rd pc
+
+delay ∷ State MicroBlaze ()
+delay = setMSRBit DelayEnable S
 
 getBranchInputValue ∷ BranchInput → State MicroBlaze W32
 getBranchInputValue (TypeA _ rb)  = getRegister rb
@@ -80,8 +108,11 @@ getBranchRegisterA ∷ BranchInput → State MicroBlaze W32
 getBranchRegisterA (TypeA ra _) = getRegister ra
 getBranchRegisterA (TypeB ra _) = getRegister ra
 
-branchWithDelay ∷ BranchInput → (MBWord → Bit) → State MicroBlaze ()
-branchWithDelay input branch_test = setMSRBit DelayEnable S >> branch input branch_test
+absoluteBranch ∷ AbsoluteBranchInput → State MicroBlaze ()
+absoluteBranch (AbsR rb) = do
+  b ← getRegister rb
+  setRPC b
+absoluteBranch (AbsI imm) = setRPC $ W32.signExtendW16 imm
 
 branch ∷ BranchInput  → (MBWord → Bit) → State MicroBlaze ()
 branch input branch_test = do
