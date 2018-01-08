@@ -10,6 +10,9 @@ import qualified Prelude         as P
 zero ∷ W32
 zero = W32 (W8.zero) (W8.zero) (W8.zero) (W8.zero)
 
+one :: W32
+one = W32 (W8.zero) (W8.zero) (W8.zero) (W8.one)
+
 add ∷ W32 → W32 → Bit → (Bit, W32)
 add (W32 b1 b2 b3 b4) (W32 c1 c2 c3 c4) ci = (co, W32 d1 d2 d3 d4)
   where ( co, d1) = W8.add b1 c1 co1
@@ -39,6 +42,24 @@ signExtendW16 w@(W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) =
         e1 = b1 W8.== c1
         e2 = b2 W8.== c2
         e3 = b3 W8.== c3
+
+subtract ∷ W32 → W32 → Bit → (Bit, W32)
+subtract (W32 x0 x1 x2 x3) (W32 y0 y1 y2 y3) ci = (c0, W32 d0 d1 d2 d3)
+  where (c0, d0) = W8.subtract x0 y0 c1
+        (c1, d1) = W8.subtract x1 y1 c2
+        (c2, d2) = W8.subtract x2 y2 c3
+        (c3, d3) = W8.subtract x3 y3 ci
+
+signedCompare ∷ W32 → W32 → W32
+signedCompare x y = cmp
+  where (_, sub@(W32 (W8 b0 b1 b2 b3 b4 b5 b6 b7) byte1 byte2 byte3)) = subtract y x C
+        msb = case isZero sub of
+                S → b0
+                C → isPositive sub
+        cmp = W32 (W8 msb b1 b2 b3 b4 b5 b6 b7) byte1 byte2 byte3
+
+unsignedCompare ∷ W32 → W32 → W32
+unsignedCompare x y = P.snd (subtract x y C)
 
 isNegative :: W32 -> Bit
 isNegative (W32 b0 _ _ _) = W8.isNegative b0

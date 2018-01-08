@@ -79,6 +79,15 @@ exec (Brlid rd imm)     = (link rd) >> delay >> branch (TypeB undefined imm) (\x
 exec (Bralid rd imm)    = (link rd) >> delay >> absoluteBranch (AbsI imm)
 exec (Brk rd rb)        = link rd >> getRegister rb >>= setRPC >> setMSRBit BreakInProgress S
 exec (Brki rd imm)      = link rd >> setRPC (W32.signExtendW16 imm) >> setMSRBit BreakInProgress S
+exec (Bsrl rd ra rb)    = error $ "barrel shifts not yet implemented"
+exec (Bsra rd ra rb)    = error $ "barrel shifts not yet implemented"
+exec (Bsll rd ra rb)    = error $ "barrel shifts not yet implemented"
+exec (Bsrli rd ra imm)  = error $ "barrel shifts not yet implemented"
+exec (Bsrai rd ra imm)  = error $ "barrel shifts not yet implemented"
+exec (Bslli rd ra imm)  = error $ "barrel shifts not yet implemented"
+exec (Cmp rd ra rb)     = execTypeA W32.signedCompare rd ra rb
+exec (Cmpu rd ra rb)    = execTypeA W32.unsignedCompare rd ra rb
+
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -123,8 +132,6 @@ branch input branch_test = do
       b ← getBranchInputValue input
       pc ← getRPC
       setRPC $ snd $ W32.add b pc C
-
-
 
 add :: CarryFlag → KeepFlag → (MBReg, Either MBReg W16) → MBReg → State MicroBlaze ()
 add carry keep (ra, y) rd = do
