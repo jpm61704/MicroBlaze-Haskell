@@ -10,21 +10,9 @@ import           MachineState
 import           MachineState.MachineStatusRegister
 
 
-type Op = (W32 → W32 → W32)
-
-execTypeA ∷ Op → MBReg → MBReg → MBReg → State MicroBlaze ()
-execTypeA op rd ra rb = do
-  a ← getRegister ra
-  b ← getRegister rb
-  setRegister rd $ op a b
-
-execTypeB ∷ Op → MBReg → MBReg → W16 → State MicroBlaze ()
-execTypeB op dest ra imm = do
-  a ← getRegister ra
-  let b = W32.signExtendW16 imm
-  setRegister dest $ op a b
-
-
+-- * Exec Function
+-- Processes instructions within the MachineState Data Type
+-- Control flow is handled elsewhere
 
 -- | note that all exec does is process the given instructions as it can given
 -- the machine state information. Delays and other temporal actions must be handled
@@ -106,6 +94,7 @@ exec (Mts rs ra )       = moveToSRegister rs ra
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
+
 type CarryFlag = Bool
 type KeepFlag = Bool
 type DelayFlag = Bool
@@ -115,6 +104,23 @@ data BranchInput = TypeA MBReg MBReg
 
 data AbsoluteBranchInput = AbsR MBReg
                          | AbsI W16
+
+
+type Op = (W32 → W32 → W32)
+
+execTypeA ∷ Op → MBReg → MBReg → MBReg → State MicroBlaze ()
+execTypeA op rd ra rb = do
+  a ← getRegister ra
+  b ← getRegister rb
+  setRegister rd $ op a b
+
+execTypeB ∷ Op → MBReg → MBReg → W16 → State MicroBlaze ()
+execTypeB op dest ra imm = do
+  a ← getRegister ra
+  let b = W32.signExtendW16 imm
+  setRegister dest $ op a b
+
+
 
 link ∷ MBReg → State MicroBlaze ()
 link rd = do

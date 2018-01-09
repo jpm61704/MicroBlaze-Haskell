@@ -389,9 +389,6 @@ loadHalfWord :: W32 -> State MicroBlaze W16
 loadByte :: W32 -> State MicroBlaze W8
 
 module Interpreter
-type Op = W32 -> W32 -> W32
-execTypeA :: Op -> MBReg -> MBReg -> MBReg -> State MicroBlaze ()
-execTypeB :: Op -> MBReg -> MBReg -> W16 -> State MicroBlaze ()
 
 -- | note that all exec does is process the given instructions as it can
 --   given the machine state information. Delays and other temporal actions
@@ -406,6 +403,9 @@ TypeB :: MBReg -> W16 -> BranchInput
 data AbsoluteBranchInput
 AbsR :: MBReg -> AbsoluteBranchInput
 AbsI :: W16 -> AbsoluteBranchInput
+type Op = W32 -> W32 -> W32
+execTypeA :: Op -> MBReg -> MBReg -> MBReg -> State MicroBlaze ()
+execTypeB :: Op -> MBReg -> MBReg -> W16 -> State MicroBlaze ()
 link :: MBReg -> State MicroBlaze ()
 delay :: State MicroBlaze ()
 getBranchInputValue :: BranchInput -> State MicroBlaze W32
