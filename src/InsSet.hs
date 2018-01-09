@@ -84,7 +84,7 @@ data MBReg = R0 -- ^ Dedicated, Value 0
 -- assembly statement;
 --
 
-
+data MBSReg = RPC | MSR deriving Show
 
 data Ins  = Add MBReg MBReg MBReg
           | Addc MBReg MBReg MBReg
@@ -178,10 +178,10 @@ data Ins  = Add MBReg MBReg MBReg
           | Lhui MBReg MBReg W16
           | Lw MBReg MBReg MBReg
           | Lwi MBReg MBReg W16
-          | Mfs MBReg MBReg
-          | Msrclr MBReg W16
-          | Msrset MBReg W16
-          | Mts MBReg W16
+          | Mfs MBReg MBSReg
+--        | Msrclr MBReg W16
+--        | Msrset MBReg W16
+          | Mts MBSReg MBReg
           | Mul MBReg MBReg MBReg
           | Mulhu MBReg MBReg MBReg
           | Mulhsu MBReg MBReg MBReg

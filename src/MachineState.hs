@@ -10,12 +10,10 @@ module MachineState(
   , getRPC
   , setRPC
   -- *** Machine Status Register
-  , RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
-  , emptyRMSR
-  , MachineStatusBit(..)
   , setMSRBit
   , getMSRBit
-
+  , pullMSR
+  , pushMSR
   -- ** General-Purpose Registers
   , MBRegisters
   , emptyRegisters
@@ -24,13 +22,16 @@ module MachineState(
   , setRegister
 
   -- ** Memory Managment
+  , Address
   , loadWord
   , loadHalfWord
   , loadByte
   ) where
 
+import           MachineState.MachineStatusRegister
+
 import           Boilerplate
-import qualified Boilerplate.W32          as W32
+import qualified Boilerplate.W32                    as W32
 import           Control.Monad.State.Lazy
 import           InsSet
 
@@ -62,56 +63,6 @@ setRPC loc = do
 
 -- ** Machine Status Register
 
--- | the machine status register
-data RMSR = RMSR { _cc  :: Bit -- ^ arithmetic carry copy (read-only)
-                 , _dce :: Bit -- ^ data cache enable
-                 , _dz  :: Bit -- ^ division by zero
-                 , _ice :: Bit -- ^ instruction cache enable
-                 , _fsl :: Bit -- ^ fsl error
-                 , _bip :: Bit -- ^ break in progress
-                 , _c   :: Bit -- ^ arithmetic carry
-                 , _ie  :: Bit -- ^ interrupt enable
-                 , _be  :: Bit -- ^ buslock enable
-                 , _de  ∷ Bit -- ^ delay enable (hidden)
-                 }
-
-data MachineStatusBit = CarryCopy
-                      | DataCacheEnable
-                      | DivisionByZero
-                      | InstructionCacheEnable
-                      | FSLError
-                      | BreakInProgress
-                      | Carry
-                      | InterruptEnable
-                      | BuslockEnable
-                      | DelayEnable
-
-
--- | sets the machine status bit indicated to the desired boolean value
-setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
-setStatus CarryCopy _ rmsr = rmsr
-setStatus DataCacheEnable b (RMSR cc _ dz ice fsl bip c ie be de) = (RMSR cc b dz ice fsl bip c ie be de)
-setStatus DivisionByZero b (RMSR cc dce _ ice fsl bip c ie be de) = (RMSR cc dce b ice fsl bip c ie be de)
-setStatus InstructionCacheEnable b (RMSR cc dce dz _ fsl bip c ie be de) = (RMSR cc dce dz b fsl bip c ie be de)
-setStatus FSLError b (RMSR cc dce dz ice _ bip c ie be de) = (RMSR cc dce dz ice b bip c ie be de)
-setStatus BreakInProgress b (RMSR cc dce dz ice fsl _ c ie be de) = (RMSR cc dce dz ice fsl b c ie be de)
-setStatus Carry b (RMSR _ dce dz ice fsl bip _ ie be de) = (RMSR b dce dz ice fsl bip b ie be de)
-setStatus InterruptEnable b (RMSR cc dce dz ice fsl bip c _ be de) = (RMSR cc dce dz ice fsl bip c b be de)
-setStatus BuslockEnable b (RMSR cc dce dz ice fsl bip c ie _ de) = (RMSR cc dce dz ice fsl bip c ie b de)
-setStatus DelayEnable b (RMSR cc dce dz ice fsl bip c ie be _) = (RMSR cc dce dz ice fsl bip c ie be b)
-
-getStatus :: MachineStatusBit -> RMSR -> Bit
-getStatus CarryCopy              = _cc
-getStatus DataCacheEnable        = _dce
-getStatus DivisionByZero         = _dz
-getStatus InstructionCacheEnable = _ice
-getStatus FSLError               = _fsl
-getStatus BreakInProgress        = _bip
-getStatus Carry                  = _c
-getStatus InterruptEnable        = _ie
-getStatus BuslockEnable          = _be
-
-
 setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
 setMSRBit msb b = do
   (MicroBlaze rs rpc rmsr) <- get
@@ -123,6 +74,19 @@ getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
 getMSRBit msb = do
   (MicroBlaze _ _ rmsr) <- get
   return $ getStatus msb rmsr
+
+pullMSR ∷ State MicroBlaze W32
+pullMSR = do
+  (MicroBlaze _ _ rmsr) ← get
+  return $ getMSRWord rmsr
+
+pushMSR ∷ W32 → State MicroBlaze ()
+pushMSR w = do
+  delay ← getMSRBit DelayEnable
+  let rmsr' = setStatus DelayEnable delay (setMSRWord w)
+  (MicroBlaze rs rpc _) ← get
+  put $ MicroBlaze rs rpc rmsr'
+
 
 
 -- ** Register Specifications
@@ -251,8 +215,6 @@ setRegister r w = do
 
 
 
-emptyRMSR :: RMSR
-emptyRMSR = RMSR C C C C C C C C C C
 
 emptyRB :: RegBlock
 emptyRB = RB W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero
@@ -268,3 +230,5 @@ loadHalfWord = undefined
 
 loadByte ∷ W32 → State MicroBlaze W8
 loadByte = undefined
+
+type Address = W32

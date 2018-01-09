@@ -2,11 +2,12 @@
 module Interpreter where
 
 import           Boilerplate
-import qualified Boilerplate.Bit          as B
-import qualified Boilerplate.W32          as W32
+import qualified Boilerplate.Bit                    as B
+import qualified Boilerplate.W32                    as W32
 import           Control.Monad.State.Lazy
 import           InsSet
 import           MachineState
+import           MachineState.MachineStatusRegister
 
 
 type Op = (W32 → W32 → W32)
@@ -95,6 +96,13 @@ exec (Idiv rd ra rb)    = error $ "requires hardware divider implementation"
 exec (Idivu rd ra rb)   = error $ "requires hardware divider implementation"
 exec (Imm imm)          = setRegister R18 (W32.backExtendW16 imm) -- NOTE: I may want to set a flag here
 exec (Lbu rd ra rb)     = load (LByte W32.unsignedExtendW8) rd ra (Register rb)
+exec (Lbui rd ra imm)   = load (LByte W32.unsignedExtendW8) rd ra (Immediate imm)
+exec (Lhu rd ra rb)     = load (LHalfWord W32.unsignedExtendW16) rd ra (Register rb)
+exec (Lhui rd ra imm)   = load (LHalfWord W32.unsignedExtendW16) rd ra (Immediate imm)
+exec (Lw rd ra rb)      = load LWord rd ra (Register rb)
+exec (Lwi rd ra imm)    = load LWord rd ra (Immediate imm)
+exec (Mfs rd rs)        = moveFromSRegister rd rs
+exec (Mts rs ra )       = moveToSRegister rs ra
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -177,5 +185,13 @@ load s rd ra y = do
                 return $ extend x
   setRegister rd val
 
+moveFromSRegister ∷ MBReg → MBSReg → State MicroBlaze ()
+moveFromSRegister rd rs = do
+  sreg ← case rs of
+           MSR → pullMSR
+           RPC → getRPC
+  setRegister rd sreg
 
-
+moveToSRegister ∷ MBSReg → MBReg → State MicroBlaze ()
+moveToSRegister RPC _  = error "Illegal op: Cannot set program counter using MTS)"
+moveToSRegister MSR ra = getRegister ra >>= pushMSR
