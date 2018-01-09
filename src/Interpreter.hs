@@ -93,7 +93,8 @@ exec (Mfs rd rs)        = moveFromSRegister rd rs
 exec (Mts rs ra )       = moveToSRegister rs ra
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
-
+-- $Utility Functions
+-- * Utility Functions and Data Types
 
 type CarryFlag = Bool
 type KeepFlag = Bool
