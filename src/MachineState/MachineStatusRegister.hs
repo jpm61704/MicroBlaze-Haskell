@@ -1,12 +1,19 @@
+{-|
+Module : MachineState.MachineStatusRegister
+Description : functions and data for contolling machine status flags
+-}
 {-# LANGUAGE UnicodeSyntax #-}
 module MachineState.MachineStatusRegister
-  ( RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
+  (
+    -- * Machine Status Register
+    RMSR( RMSR, _cc, _dce, _dz, _ice, _fsl, _bip, _c, _ie, _be)
   , emptyRMSR
+  , getMSRWord
+  , setMSRWord
+    -- ** Status Flags
   , MachineStatusBit(..)
   , getStatus
   , setStatus
-  , getMSRWord
-  , setMSRWord
   ) where
 
 import           Boilerplate
@@ -27,6 +34,7 @@ data RMSR = RMSR { _cc  :: Bit -- ^ arithmetic carry copy (read-only)
                  , _de  ∷ Bit -- ^ delay enable (hidden)
                  }
 
+-- | Various status flags in the Machine State Register
 data MachineStatusBit = CarryCopy
                       | DataCacheEnable
                       | DivisionByZero
@@ -52,6 +60,7 @@ setStatus InterruptEnable b (RMSR cc dce dz ice fsl bip c _ be de) = (RMSR cc dc
 setStatus BuslockEnable b (RMSR cc dce dz ice fsl bip c ie _ de) = (RMSR cc dce dz ice fsl bip c ie b de)
 setStatus DelayEnable b (RMSR cc dce dz ice fsl bip c ie be _) = (RMSR cc dce dz ice fsl bip c ie be b)
 
+-- | Get the status of a specified flag
 getStatus :: MachineStatusBit -> RMSR -> Bit
 getStatus CarryCopy              = _cc
 getStatus DataCacheEnable        = _dce
@@ -63,6 +72,7 @@ getStatus Carry                  = _c
 getStatus InterruptEnable        = _ie
 getStatus BuslockEnable          = _be
 
+-- | a zero-initialized (All False) MSR
 emptyRMSR :: RMSR
 emptyRMSR = RMSR C C C C C C C C C C
 
@@ -70,5 +80,6 @@ emptyRMSR = RMSR C C C C C C C C C C
 getMSRWord ∷ RMSR → W32
 getMSRWord (RMSR cc dce dz ice fsl bip c ie be _) = W32 (W8 cc C C C C C C C) W8.zero W8.zero (W8 dce dz ice fsl bip c ie be)
 
+-- | sets the status register from a 32-bit MSR word
 setMSRWord ∷ W32 → RMSR
 setMSRWord (W32 (W8 cc C C C C C C C) _ _ (W8 dce dz ice fsl bip c ie be)) = RMSR cc dce dz ice fsl bip c ie be C

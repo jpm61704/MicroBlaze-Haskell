@@ -1,3 +1,7 @@
+{-|
+Module : MachineState
+Description : The data representations and basic state manipulations for the MB Processor
+-}
 {-# LANGUAGE UnicodeSyntax #-}
 module MachineState(
   -- * Microblaze Machine type
@@ -44,17 +48,20 @@ data MicroBlaze = MicroBlaze MBRegisters RPC RMSR
 -- | Standard word size for MicroBlaze
 type MBWord = W32
 
+-- | Creates a zero-initialized MicroBlaze controller
 newMicroBlaze :: MicroBlaze
 newMicroBlaze = MicroBlaze emptyRegisters W32.zero emptyRMSR
 
 -- | Program Counter
 type RPC = MBWord
 
+-- | Gets the RPC from a MicroBlaze State
 getRPC :: State MicroBlaze MBWord
 getRPC = do
   (MicroBlaze _ rpc _) <- get
   return rpc
 
+-- | Sets the RPC in a MicroBlaze State
 setRPC :: MBWord -> State MicroBlaze ()
 setRPC loc = do
   (MicroBlaze rs _ rmsr) <- get
@@ -63,23 +70,29 @@ setRPC loc = do
 
 -- ** Machine Status Register
 
-setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
+-- | Sets a specified bit on the machine status register
+setMSRBit :: MachineStatusBit     -- ^ Machine Status Flag to set
+          → Bit                  -- ^ The value to set it to
+          → State MicroBlaze ()
 setMSRBit msb b = do
   (MicroBlaze rs rpc rmsr) <- get
   let rmsr' = setStatus msb b rmsr
   put $ MicroBlaze rs rpc rmsr'
   return ()
 
+-- | Gets the value of a specified MSR Bit
 getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
 getMSRBit msb = do
   (MicroBlaze _ _ rmsr) <- get
   return $ getStatus msb rmsr
 
+-- | Pulls the enture Machine Status Register as a 32-bit Word
 pullMSR ∷ State MicroBlaze W32
 pullMSR = do
   (MicroBlaze _ _ rmsr) ← get
   return $ getMSRWord rmsr
 
+-- | Pushes an enture MSR as a 32-bit word
 pushMSR ∷ W32 → State MicroBlaze ()
 pushMSR w = do
   delay ← getMSRBit DelayEnable
@@ -200,13 +213,13 @@ readRegister R29 (MBRegisters b1 b2 b3 b4) = readRegBlock RB6 b4
 readRegister R30 (MBRegisters b1 b2 b3 b4) = readRegBlock RB7 b4
 readRegister R31 (MBRegisters b1 b2 b3 b4) = readRegBlock RB8 b4
 
-
+-- | gets the value at a specified register
 getRegister :: MBReg -> State MicroBlaze MBWord
 getRegister r = do
   (MicroBlaze x _ _) <- get
   return $ readRegister r x
 
-
+-- | sets the value at a specified register
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
 setRegister r w = do
   (MicroBlaze rs rpc msr) <- get
@@ -219,16 +232,27 @@ setRegister r w = do
 emptyRB :: RegBlock
 emptyRB = RB W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero
 
+-- | zero-initialized register bank
 emptyRegisters :: MBRegisters
 emptyRegisters = MBRegisters emptyRB emptyRB emptyRB emptyRB
 
+-- | loads a 32-bit word from memory
+--
+-- __NOT YET IMPLEMENTED__
 loadWord ∷ W32 → State MicroBlaze W32
 loadWord = undefined
 
+-- | loads a 16-bit half-word from memory
+--
+-- __NOT YET IMPLEMENTED__
 loadHalfWord ∷ W32 → State MicroBlaze W16
 loadHalfWord = undefined
 
+-- | loads a byte from memory
+--
+-- __NOT YET IMPLEMENTED__
 loadByte ∷ W32 → State MicroBlaze W8
 loadByte = undefined
 
+-- | A 32-bit word memory address
 type Address = W32

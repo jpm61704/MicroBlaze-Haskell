@@ -9,38 +9,44 @@
 @package MicroBlaze
 @version 0.1.0.0
 
-module MBWord
-newtype MBWord
-MBWord :: Word32 -> MBWord
-newtype CarryBit
-CarryBit :: Bool -> CarryBit
-add :: MBWord -> MBWord -> CarryBit -> MBWord
-w1 :: MBWord
-w2 :: MBWord
-instance GHC.Show.Show MBWord.MBWord
 
 module Boilerplate
 
 -- | Standard Bit Datatype Supporting functions can be found in
---   Boilerplate.Bit
+--   <a>Boilerplate.Bit</a>
 data Bit
 C :: Bit
 S :: Bit
 
+-- | show instance of Bit displays bits as 1 and 0
+
 -- | Standard Byte defintion Supporting functions can be found in
---   Boilerplate.W8
+--   <a>Boilerplate.W8</a>
 data W8
 W8 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W8
+
+-- | 16-bit data
 data W16
 W16 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W16
+
+-- | 32-bit data Supporting functions can be found in
+--   <a>Boilerplate.W32</a>
 data W32
 W32 :: W8 -> W8 -> W8 -> W8 -> W32
+
+-- | 5-bit data
 data W5
 W5 :: Bit -> Bit -> Bit -> Bit -> Bit -> W5
+
+-- | 6-bit data
 data W6
 W6 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W6
+
+-- | 11-bit data
 data W11
 W11 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W11
+
+-- | 26-bit data
 data W26
 W26 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W26
 instance GHC.Show.Show Boilerplate.W26
@@ -52,71 +58,161 @@ instance GHC.Show.Show Boilerplate.W16
 instance GHC.Show.Show Boilerplate.W8
 instance GHC.Show.Show Boilerplate.Bit
 
+
 module Boilerplate.Bit
 
 -- | bit negation <tt> not S = C not C = S </tt>
 not :: Bit -> Bit
+
+-- | equality
 (==) :: Bit -> Bit -> Bit
+
+-- | logical AND
 and :: Bit -> Bit -> Bit
+
+-- | logical OR
 or :: Bit -> Bit -> Bit
+
+-- | logical exclusive OR
 xor :: Bit -> Bit -> Bit
+
+-- | Binary additon with carries
 plus :: Bit -> Bit -> Bit -> (Bit, Bit)
+
+-- | Binary subtraction with carries
 minus :: Bit -> Bit -> Bit -> (Bit, Bit)
 
+
 module Boilerplate.W8
+
+-- | zero-byte (00000000)
 zero :: W8
+
+-- | one-byte (00000001)
 one :: W8
+
+-- | logical not
 not :: W8 -> W8
+
+-- | logical and
 and :: W8 -> W8 -> W8
+
+-- | logical or
 or :: W8 -> W8 -> W8
+
+-- | logical exclusive or
 xor :: W8 -> W8 -> W8
+
+-- | logical equality (as opposed to bitwise)
 (==) :: W8 -> W8 -> Bit
+
+-- | left rotation
 rotateLeft :: W8 -> W8
+
+-- | right rotation
 rotateRight :: W8 -> W8
+
+-- | left shift with carry
 shiftLeft :: W8 -> Bit -> (Bit, W8)
+
+-- | right shift with carry
 shiftRight :: W8 -> Bit -> (Bit, W8)
-add :: W8 -> W8 -> Bit -> (Bit, W8)
-subtract :: W8 -> W8 -> Bit -> (Bit, W8)
-negative :: W8 -> W8
-isNegative :: W8 -> Bit
+
+-- | most significant bit of byte
+--   
+--   also is the sign-bit
 mostSignificantBit :: W8 -> Bit
+
+-- | least significant bit of byte
 leastSignificantBit :: W8 -> Bit
 
+-- | addition with carry
+add :: W8 -> W8 -> Bit -> (Bit, W8)
+
+-- | subtraction with carry
+subtract :: W8 -> W8 -> Bit -> (Bit, W8)
+
+-- | two's complement negation
+negative :: W8 -> W8
+
+-- | tests negativity
+isNegative :: W8 -> Bit
+
+
 module Boilerplate.W32
+
+-- | zero value (00000000 00000000 00000000 00000000)
 zero :: W32
+
+-- | one value (00000000 00000000 00000000 00000001)
 one :: W32
-add :: W32 -> W32 -> Bit -> (Bit, W32)
+
+-- | Logical AND
 and :: W32 -> W32 -> W32
+
+-- | Logical OR
 or :: W32 -> W32 -> W32
+
+-- | Logical NOT
 not :: W32 -> W32
-signExtendW16 :: W16 -> W32
-unsignedExtendW16 :: W16 -> W32
-signExtendW8 :: W8 -> W32
-unsignedExtendW8 :: W8 -> W32
-backExtendW16 :: W16 -> W32
+
+-- | equality
 (==) :: W32 -> W32 -> Bit
+
+-- | two's complement 16-bit sign extension
+signExtendW16 :: W16 -> W32
+
+-- | unsigned 16-bit extension
+unsignedExtendW16 :: W16 -> W32
+
+-- | two's complement byte sign extension
+signExtendW8 :: W8 -> W32
+
+-- | unsigned byte extension
+unsignedExtendW8 :: W8 -> W32
+
+-- | back-extends 16-bit data (useful for certain register operations)
+--   
+--   example : 1010 0011 -&gt; 1010 0011 0000 0000
+backExtendW16 :: W16 -> W32
+
+-- | addition with carries
+add :: W32 -> W32 -> Bit -> (Bit, W32)
+
+-- | subtraction with carries
 subtract :: W32 -> W32 -> Bit -> (Bit, W32)
+
+-- | subtraction-based comparison with sign-preservation
 signedCompare :: W32 -> W32 -> W32
+
+-- | unsigned subtraction comparison
 unsignedCompare :: W32 -> W32 -> W32
+
+-- | test if value is negative under two's complement
 isNegative :: W32 -> Bit
+
+-- | test if a value is positive or zero under two's complement
 isPositive :: W32 -> Bit
+
+-- | test if a value is zero
 isZero :: W32 -> Bit
+
+-- | test if a value is greater than zero under two's complement
 greaterThanZero :: W32 -> Bit
+
+-- | test if a value is less than or equal to zero under two's complement
 lessThanOrEqualToZero :: W32 -> Bit
 
+
 module InsSet
-type Label = String
-data MBVal
-Byte :: Int8 -> MBVal
-HalfWord :: Int16 -> MBVal
-Word :: Int32 -> MBVal
-Label :: Label -> MBVal
-zerow :: MBVal
-onew :: MBVal
+
+-- | Possible data sizes
 data MBSize
 ByteSize :: MBSize
 HalfWordSize :: MBSize
 WordSize :: MBSize
+
+-- | All user-accesible general-purpose registers
 data MBReg
 
 -- | Dedicated, Value 0
@@ -214,9 +310,17 @@ R30 :: MBReg
 
 -- | Non-volatile, must be saved across function calls
 R31 :: MBReg
+
+-- | Special Purpose Registers
 data MBSReg
+
+-- | Program Counter
 RPC :: MBSReg
+
+-- | Machine Status Register
 MSR :: MBSReg
+
+-- | The MicroBlaze Instruction Set
 data Ins
 Add :: MBReg -> MBReg -> MBReg -> Ins
 Addc :: MBReg -> MBReg -> MBReg -> Ins
@@ -331,14 +435,24 @@ instance GHC.Show.Show InsSet.MBSReg
 instance GHC.Enum.Enum InsSet.MBReg
 instance GHC.Show.Show InsSet.MBReg
 instance GHC.Show.Show InsSet.MBSize
-instance GHC.Show.Show InsSet.MBVal
+
 
 module MachineState.MachineStatusRegister
 
 -- | the machine status register
 data RMSR
 RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
+
+-- | a zero-initialized (All False) MSR
 emptyRMSR :: RMSR
+
+-- | gets the status register in the form of a 32-bit word
+getMSRWord :: RMSR -> W32
+
+-- | sets the status register from a 32-bit MSR word
+setMSRWord :: W32 -> RMSR
+
+-- | Various status flags in the Machine State Register
 data MachineStatusBit
 CarryCopy :: MachineStatusBit
 DataCacheEnable :: MachineStatusBit
@@ -350,14 +464,13 @@ Carry :: MachineStatusBit
 InterruptEnable :: MachineStatusBit
 BuslockEnable :: MachineStatusBit
 DelayEnable :: MachineStatusBit
+
+-- | Get the status of a specified flag
 getStatus :: MachineStatusBit -> RMSR -> Bit
 
 -- | sets the machine status bit indicated to the desired boolean value
 setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
 
--- | gets the status register in the form of a 32-bit word
-getMSRWord :: RMSR -> W32
-setMSRWord :: W32 -> RMSR
 
 module MachineState
 
@@ -367,26 +480,61 @@ MicroBlaze :: MBRegisters -> RPC -> RMSR -> MicroBlaze
 
 -- | Standard word size for MicroBlaze
 type MBWord = W32
+
+-- | Creates a zero-initialized MicroBlaze controller
 newMicroBlaze :: MicroBlaze
 
 -- | Program Counter
 type RPC = MBWord
+
+-- | Gets the RPC from a MicroBlaze State
 getRPC :: State MicroBlaze MBWord
+
+-- | Sets the RPC in a MicroBlaze State
 setRPC :: MBWord -> State MicroBlaze ()
+
+-- | Sets a specified bit on the machine status register
 setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
+
+-- | Gets the value of a specified MSR Bit
 getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
+
+-- | Pulls the enture Machine Status Register as a 32-bit Word
 pullMSR :: State MicroBlaze W32
+
+-- | Pushes an enture MSR as a 32-bit word
 pushMSR :: W32 -> State MicroBlaze ()
 
 -- | The register store for the Microblaze
 data MBRegisters
+
+-- | zero-initialized register bank
 emptyRegisters :: MBRegisters
+
+-- | gets the value at a specified register
 getRegister :: MBReg -> State MicroBlaze MBWord
+
+-- | sets the value at a specified register
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
+
+-- | A 32-bit word memory address
 type Address = W32
+
+-- | loads a 32-bit word from memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
 loadWord :: W32 -> State MicroBlaze W32
+
+-- | loads a 16-bit half-word from memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
 loadHalfWord :: W32 -> State MicroBlaze W16
+
+-- | loads a byte from memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
 loadByte :: W32 -> State MicroBlaze W8
+
 
 module Interpreter
 
@@ -394,35 +542,81 @@ module Interpreter
 --   given the machine state information. Delays and other temporal actions
 --   must be handled at a different level of the program
 exec :: Ins -> State MicroBlaze ()
-type CarryFlag = Bool
-type KeepFlag = Bool
+
+-- | Delay Flag for Branching
 type DelayFlag = Bool
+
+-- | Branch Input Type
 data BranchInput
 TypeA :: MBReg -> MBReg -> BranchInput
 TypeB :: MBReg -> W16 -> BranchInput
+
+-- | Absolute Branch Input Type
 data AbsoluteBranchInput
 AbsR :: MBReg -> AbsoluteBranchInput
 AbsI :: W16 -> AbsoluteBranchInput
+
+-- | W32 Isomorphism type
 type Op = W32 -> W32 -> W32
+
+-- | execute a type a instruction using basic operators
 execTypeA :: Op -> MBReg -> MBReg -> MBReg -> State MicroBlaze ()
+
+-- | execute a type b instruction using basic operators
 execTypeB :: Op -> MBReg -> MBReg -> W16 -> State MicroBlaze ()
-link :: MBReg -> State MicroBlaze ()
-delay :: State MicroBlaze ()
+
+-- | SHOULD BE DEPRECATED
 getBranchInputValue :: BranchInput -> State MicroBlaze W32
+
+-- | SHOULD BE DEPRECATED
 getBranchRegisterA :: BranchInput -> State MicroBlaze W32
+
+-- | branch to an absolute address
 absoluteBranch :: AbsoluteBranchInput -> State MicroBlaze ()
+
+-- | branch to a relative address
 branch :: BranchInput -> (MBWord -> Bit) -> State MicroBlaze ()
+
+-- | adding mechanism for MicroBlaze (likely can be deprecated)
 add :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
+
+-- | Carry Flag for adder
+type CarryFlag = Bool
+
+-- | Keep Flag for adder
+type KeepFlag = Bool
+
+-- | size of load operation, include sign-extension function of appropriate
+--   size
 data LoadSize
 LWord :: LoadSize
 LHalfWord :: (W16 -> W32) -> LoadSize
 LByte :: (W8 -> W32) -> LoadSize
+
+-- | Either-like datatype to differentiate TypeA and TypeB data
 data ImmOrReg
 Register :: MBReg -> ImmOrReg
 Immediate :: W16 -> ImmOrReg
+
+-- | Loads data from memory, The two register offsets are added to obtain
+--   an address
 load :: LoadSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
+
+-- | pulls either the MSR or PC register into given register
 moveFromSRegister :: MBReg -> MBSReg -> State MicroBlaze ()
+
+-- | puts a Word into a special purpose register. Does not support updates
+--   to the program counter
 moveToSRegister :: MBSReg -> MBReg -> State MicroBlaze ()
 
+-- | links the current program counter value into the specified register
+link :: MBReg -> State MicroBlaze ()
+
+-- | sets the delay flag in the machine status register
+delay :: State MicroBlaze ()
+
+
 module TestData
+
+-- | An addition test
 quickTest :: State MicroBlaze W32

@@ -1,3 +1,7 @@
+{-|
+Module : InsSet
+Description : Data definitions for the MicroBlaze Instruction Set
+-}
 module InsSet where
 
 import           Boilerplate
@@ -5,37 +9,7 @@ import           Boilerplate.Bit as B
 import           Boilerplate.W32 as W32
 import           Data.Int
 
-type Label = String
-
-{-
-data ASM = MBS Ins ASM
-            | MBL Label ASM
-            | MBNil
-            deriving Show
-
-mbinscat :: ASM -> ASM -> ASM
-mbinscat (MBS i is) is' = MBS i (mbinscat is is')
-mbinscat (MBL l is) is' = MBL l (mbinscat is is')
-mbinscat MBNil is'      = is'
--}
-
-
---
--- Microblaze words:
---
-data MBVal = Byte Int8
-           | HalfWord Int16
-           | Word Int32
-           | Label Label
-           deriving Show
-
-
-zerow :: MBVal
-zerow = Word 0
-
-onew :: MBVal
-onew = Word 1
-
+-- | Possible data sizes
 data MBSize = ByteSize
             | HalfWordSize
             | WordSize
@@ -43,6 +17,7 @@ data MBSize = ByteSize
 
 -- * Register Type
 
+-- | All user-accesible general-purpose registers
 data MBReg = R0 -- ^ Dedicated, Value 0
            | R1 -- ^ Dedicated, Stack Pointer
            | R2 -- ^ Dedicated, Read-only small data area anchor
@@ -84,8 +59,12 @@ data MBReg = R0 -- ^ Dedicated, Value 0
 -- assembly statement;
 --
 
-data MBSReg = RPC | MSR deriving Show
+-- | Special Purpose Registers
+data MBSReg = RPC             -- ^ Program Counter
+            | MSR             -- ^ Machine Status Register
+            deriving Show
 
+-- | The MicroBlaze Instruction Set
 data Ins  = Add MBReg MBReg MBReg
           | Addc MBReg MBReg MBReg
           | Addk MBReg MBReg MBReg

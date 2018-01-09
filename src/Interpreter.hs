@@ -1,3 +1,7 @@
+{-|
+Module : Interpreter
+Description: The instruction interpreter for the MicroBlaze processor
+-}
 {-# LANGUAGE UnicodeSyntax #-}
 module Interpreter where
 
@@ -93,59 +97,73 @@ exec (Mfs rd rs)        = moveFromSRegister rd rs
 exec (Mts rs ra )       = moveToSRegister rs ra
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
--- $Utility Functions
+
 -- * Utility Functions and Data Types
 
-type CarryFlag = Bool
-type KeepFlag = Bool
+
+-- | Delay Flag for Branching
 type DelayFlag = Bool
 
+
+-- | Branch Input Type
 data BranchInput = TypeA MBReg MBReg
                  | TypeB MBReg W16
 
+-- | Absolute Branch Input Type
 data AbsoluteBranchInput = AbsR MBReg
                          | AbsI W16
 
-
+-- | W32 Isomorphism type
 type Op = (W32 → W32 → W32)
 
-execTypeA ∷ Op → MBReg → MBReg → MBReg → State MicroBlaze ()
+-- ** Generic Operator Execution
+
+-- | execute a type a instruction using basic operators
+execTypeA ∷ Op                   -- ^ Operator to apply to values
+          → MBReg                -- ^ Destination register
+          → MBReg                -- ^ Input Register A
+          → MBReg                -- ^ Input Register B
+          → State MicroBlaze ()
 execTypeA op rd ra rb = do
   a ← getRegister ra
   b ← getRegister rb
   setRegister rd $ op a b
 
-execTypeB ∷ Op → MBReg → MBReg → W16 → State MicroBlaze ()
+-- | execute a type b instruction using basic operators
+execTypeB ∷ Op                   -- ^ Operator to apply to values
+          → MBReg                -- ^ Destination register
+          → MBReg                -- ^ Input Register A
+          → W16                  -- ^ Immediate Data
+          → State MicroBlaze ()
 execTypeB op dest ra imm = do
   a ← getRegister ra
   let b = W32.signExtendW16 imm
   setRegister dest $ op a b
 
 
+-- ** Branching
 
-link ∷ MBReg → State MicroBlaze ()
-link rd = do
-  pc ← getRPC
-  setRegister rd pc
-
-delay ∷ State MicroBlaze ()
-delay = setMSRBit DelayEnable S
-
+-- | SHOULD BE DEPRECATED
 getBranchInputValue ∷ BranchInput → State MicroBlaze W32
 getBranchInputValue (TypeA _ rb)  = getRegister rb
 getBranchInputValue (TypeB _ w16) = return $ W32.signExtendW16 w16
 
+-- | SHOULD BE DEPRECATED
 getBranchRegisterA ∷ BranchInput → State MicroBlaze W32
 getBranchRegisterA (TypeA ra _) = getRegister ra
 getBranchRegisterA (TypeB ra _) = getRegister ra
 
+-- | branch to an absolute address
 absoluteBranch ∷ AbsoluteBranchInput → State MicroBlaze ()
 absoluteBranch (AbsR rb) = do
   b ← getRegister rb
   setRPC b
 absoluteBranch (AbsI imm) = setRPC $ W32.signExtendW16 imm
 
-branch ∷ BranchInput  → (MBWord → Bit) → State MicroBlaze ()
+-- | branch to a relative address
+branch ∷ BranchInput          -- ^ The branch input type (TypeA vs TypeB)
+       → (MBWord → Bit)      -- ^ The predicate to decide branching
+       → State MicroBlaze ()
 branch input branch_test = do
   a ← getBranchRegisterA input
   case branch_test a of
@@ -155,6 +173,9 @@ branch input branch_test = do
       pc ← getRPC
       setRPC $ snd $ W32.add b pc C
 
+-- ** Addition
+
+-- | adding mechanism for MicroBlaze (likely can be deprecated)
 add :: CarryFlag → KeepFlag → (MBReg, Either MBReg W16) → MBReg → State MicroBlaze ()
 add carry keep (ra, y) rd = do
   a ← getRegister ra
@@ -168,14 +189,31 @@ add carry keep (ra, y) rd = do
     then return ()
     else setMSRBit Carry carry_out
 
+
+-- | Carry Flag for adder
+type CarryFlag = Bool
+
+-- | Keep Flag for adder
+type KeepFlag = Bool
+
+
+-- ** Loading From Memory
+
+-- | size of load operation, include sign-extension function of appropriate size
 data LoadSize = LWord
               | LHalfWord (W16 → W32)
               | LByte (W8 → W32)
 
+-- | Either-like datatype to differentiate TypeA and TypeB data
 data ImmOrReg  = Register  MBReg
                | Immediate W16
 
-load :: LoadSize → MBReg → MBReg → ImmOrReg  → State MicroBlaze ()
+-- | Loads data from memory, The two register offsets are added to obtain an address
+load :: LoadSize                 -- ^ the size of the load operation (Byte, HalfWord, Word)
+     → MBReg                    -- ^ Destination register for loaded data
+     → MBReg                    -- ^ Register Offset 1
+     → ImmOrReg                 -- ^ Register Offset 2
+     → State MicroBlaze ()
 load s rd ra y = do
   a ← getRegister ra
   b ← case y of
@@ -193,14 +231,35 @@ load s rd ra y = do
   setRegister rd val
 
 
+-- ** Special Purpose Registers
 
-moveFromSRegister ∷ MBReg → MBSReg → State MicroBlaze ()
+-- | pulls either the MSR or PC register into given register
+moveFromSRegister ∷ MBReg                   -- ^ Destination Register
+                  → MBSReg                  -- ^ Special Purpose Register to Pull (MSR or RPC)
+                  → State MicroBlaze ()
 moveFromSRegister rd rs = do
   sreg ← case rs of
            MSR → pullMSR
            RPC → getRPC
   setRegister rd sreg
 
-moveToSRegister ∷ MBSReg → MBReg → State MicroBlaze ()
+-- | puts a Word into a special purpose register.
+-- Does not support updates to the program counter
+moveToSRegister ∷ MBSReg                -- ^ The register to alter
+                → MBReg                 -- ^ The register containing the MSR Word
+                → State MicroBlaze ()
 moveToSRegister RPC _  = error "Illegal op: Cannot set program counter using MTS)"
 moveToSRegister MSR ra = getRegister ra >>= pushMSR
+
+
+-- | links the current program counter value into the specified register
+link ∷ MBReg                     -- ^ The destination register for the PC word
+     → State MicroBlaze ()
+link rd = do
+  pc ← getRPC
+  setRegister rd pc
+
+
+-- | sets the delay flag in the machine status register
+delay ∷ State MicroBlaze ()
+delay = setMSRBit DelayEnable S

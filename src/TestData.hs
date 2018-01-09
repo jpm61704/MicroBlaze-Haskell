@@ -1,3 +1,7 @@
+{-|
+Module : TestData
+Description : example data and basic tests
+-}
 {-# LANGUAGE UnicodeSyntax #-}
 module TestData where
 
@@ -9,6 +13,7 @@ import           InsSet
 import           Interpreter
 import           MachineState
 
+-- | An addition test
 quickTest ∷ State MicroBlaze W32
 quickTest = do
   setRegister R1 (W32 W8.zero W8.zero W8.zero (W8 C C C C C C C S))
