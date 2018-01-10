@@ -171,7 +171,9 @@ data Ins  = Add MBReg MBReg MBReg
           | Pcmpne MBReg MBReg MBReg
           -- put to FSL interface:
           | Put MBReg Int
-          | Putd MBReg MBReg Int
+          | Nput MBReg Int
+          | Cput MBReg Int
+          | Ncput MBReg Int
           | Rsub MBReg MBReg MBReg
           | Rsubc MBReg MBReg MBReg
           | Rsubk MBReg MBReg MBReg

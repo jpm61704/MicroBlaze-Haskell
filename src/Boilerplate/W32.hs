@@ -124,3 +124,8 @@ greaterThanZero x = B.and (isPositive x) (B.not (isZero x))
 lessThanOrEqualToZero ∷ W32 → Bit
 lessThanOrEqualToZero x = B.or (isNegative x) (isZero x)
 
+-- | reverse subtraction
+--
+-- rb + not(ra) + carry
+reverseSubtraction ∷ W32 → W32 → Bit → (Bit, W32)
+reverseSubtraction ra rb ci = add rb (not ra) ci

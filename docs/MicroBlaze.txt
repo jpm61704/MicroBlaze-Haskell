@@ -203,6 +203,11 @@ greaterThanZero :: W32 -> Bit
 -- | test if a value is less than or equal to zero under two's complement
 lessThanOrEqualToZero :: W32 -> Bit
 
+-- | reverse subtraction
+--   
+--   rb + not(ra) + carry
+reverseSubtraction :: W32 -> W32 -> Bit -> (Bit, W32)
+
 
 module InsSet
 
@@ -404,7 +409,9 @@ Ori :: MBReg -> MBReg -> W16 -> Ins
 Pcmpbf :: MBReg -> MBReg -> MBReg -> Ins
 Pcmpne :: MBReg -> MBReg -> MBReg -> Ins
 Put :: MBReg -> Int -> Ins
-Putd :: MBReg -> MBReg -> Int -> Ins
+Nput :: MBReg -> Int -> Ins
+Cput :: MBReg -> Int -> Ins
+Ncput :: MBReg -> Int -> Ins
 Rsub :: MBReg -> MBReg -> MBReg -> Ins
 Rsubc :: MBReg -> MBReg -> MBReg -> Ins
 Rsubk :: MBReg -> MBReg -> MBReg -> Ins
@@ -579,6 +586,9 @@ branch :: BranchInput -> (MBWord -> Bit) -> State MicroBlaze ()
 
 -- | adding mechanism for MicroBlaze (likely can be deprecated)
 add :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
+
+-- | hardware subtraction (likely can be deprecated)
+sub :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
 
 -- | Carry Flag for adder
 type CarryFlag = Bool

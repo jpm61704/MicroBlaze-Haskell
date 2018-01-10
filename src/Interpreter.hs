@@ -95,6 +95,22 @@ exec (Lw rd ra rb)      = load LWord rd ra (Register rb)
 exec (Lwi rd ra imm)    = load LWord rd ra (Immediate imm)
 exec (Mfs rd rs)        = moveFromSRegister rd rs
 exec (Mts rs ra )       = moveToSRegister rs ra
+exec (Mul rd ra rb)     = undefined
+exec (Muli rd ra imm)   = undefined
+exec (Or rd ra rb)      = execTypeA W32.or rd ra rb
+exec (Ori rd ra imm)    = execTypeB W32.or rd ra imm
+exec (Put ra fslx)      = error $ "fsl instructions not yet implemented"
+exec (Nput ra fslx)     = error $ "fsl instructions not yet implemented"
+exec (Cput ra fslx)     = error $ "fsl instructions not yet implemented"
+exec (Ncput ra fslx)    = error $ "fsl instructions not yet implemented"
+exec (Rsub rd ra rb)    = sub False False (ra, Left rb) rd
+exec (Rsubc rd ra rb)   = sub True False (ra, Left rb) rd
+exec (Rsubk rd ra rb)   = sub False True (ra, Left rb) rd
+exec (Rsubkc rd ra rb)  = sub True True (ra, Left rb) rd
+exec (Rsubi rd ra imm)  = sub False False (ra, Right imm) rd
+exec (Rsubic rd ra imm) = sub True False (ra, Right imm) rd
+exec (Rsubik rd ra imm) = sub False True (ra, Right imm) rd
+exec (Rsubikc rd ra imm) = sub True True (ra, Right imm) rd
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -189,6 +205,19 @@ add carry keep (ra, y) rd = do
     then return ()
     else setMSRBit Carry carry_out
 
+-- | hardware subtraction (likely can be deprecated)
+sub :: CarryFlag → KeepFlag → (MBReg, Either MBReg W16) → MBReg → State MicroBlaze ()
+sub carry keep (ra, y) rd = do
+  a ← getRegister ra
+  b ← case y of
+        Left rb   → getRegister rb
+        Right imm → return $ W32.signExtendW16 imm
+  c ← if carry then getMSRBit Carry else return C
+  let (carry_out, output) = W32.reverseSubtraction a b c
+  setRegister rd output
+  if keep
+    then return ()
+    else setMSRBit Carry carry_out
 
 -- | Carry Flag for adder
 type CarryFlag = Bool
