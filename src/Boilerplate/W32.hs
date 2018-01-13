@@ -43,6 +43,13 @@ not (W32 b1 b2 b3 b4) = W32 (W8.not b1) (W8.not b2) (W8.not b3) (W8.not b4)
         e3 = b3 W8.== c3
 
 
+xor ∷ W32 → W32 → W32
+xor (W32 b1 b2 b3 b4) (W32 c1 c2 c3 c4) = W32 o1 o2 o3 o4
+  where o1 = W8.xor b1 c1
+        o2 = W8.xor b2 c2
+        o3 = W8.xor b3 c3
+        o4 = W8.xor b4 c4
+
 -- * Conversions(Extensions)
 
 -- | two's complement 16-bit sign extension
@@ -70,6 +77,14 @@ unsignedExtendW8 (W8 b0 b1 b2 b3 b4 b5 b6 b7) = W32 W8.zero W8.zero W8.zero (W8 
 -- example : 1010 0011 -> 1010 0011 0000 0000
 backExtendW16 ∷ W16 → W32
 backExtendW16 (W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15) = W32 (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 b8 b9 b10 b11 b12 b13 b14 b15) W8.zero W8.zero
+
+-- | the least significant byte
+leastSignificantByte ∷ W32 → W8
+leastSignificantByte (W32 _ _ _ b3) = b3
+
+-- | the least significat hald-word
+leastSignificantHalfWord ∷ W32 → W16
+leastSignificantHalfWord (W32 _ _ (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 b8 b9 b10 b11 b12 b13 b14 b15)) = W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
 
 -- * Arithmetic
 
@@ -129,3 +144,20 @@ lessThanOrEqualToZero x = B.or (isNegative x) (isZero x)
 -- rb + not(ra) + carry
 reverseSubtraction ∷ W32 → W32 → Bit → (Bit, W32)
 reverseSubtraction ra rb ci = add rb (not ra) ci
+
+-- * Bit Shifting
+
+arithmeticShiftRight ∷ W32 → Bit → (Bit, W32)
+arithmeticShiftRight (W32 b0 b1 b2 b3) ci = (c3, W32 b0' b1' b2' b3')
+  where (c0, b0') = W8.arithmeticShiftRight b0 ci
+        (c1, b1') = W8.arithmeticShiftRight b1 c0
+        (c2, b2') = W8.arithmeticShiftRight b2 c1
+        (c3, b3') = W8.arithmeticShiftRight b3 c2
+
+logicalShiftRight ∷ W32 → (Bit, W32)
+logicalShiftRight (W32 b0 b1 b2 b3) = (c3, W32 b0' b1' b2' b3')
+  where (c0, b0') = W8.arithmeticShiftRight b0 C
+        (c1, b1') = W8.arithmeticShiftRight b1 c0
+        (c2, b2') = W8.arithmeticShiftRight b2 c1
+        (c3, b3') = W8.arithmeticShiftRight b3 c2
+

@@ -113,3 +113,10 @@ negative w = P.snd (add (not w) one C)
 isNegative :: W8 -> Bit
 isNegative w = (mostSignificantBit w) B.== S
 
+-- * Bit Shifts
+
+arithmeticShiftRight ∷ W8 → Bit → (Bit, W8)
+arithmeticShiftRight (W8 b0 b1 b2 b3 b4 b5 b6 b7) ci = (b7, W8 ci b0 b1 b2 b3 b4 b5 b6)
+
+logicalShiftRight ∷ W8 → (Bit, W8)
+logicalShiftRight (W8 b0 b1 b2 b3 b4 b5 b6 b7) = (b7, W8 C b0 b1 b2 b3 b4 b5 b6)

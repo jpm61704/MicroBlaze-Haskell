@@ -111,6 +111,24 @@ exec (Rsubi rd ra imm)  = sub False False (ra, Right imm) rd
 exec (Rsubic rd ra imm) = sub True False (ra, Right imm) rd
 exec (Rsubik rd ra imm) = sub False True (ra, Right imm) rd
 exec (Rsubikc rd ra imm) = sub True True (ra, Right imm) rd
+exec (Rtbd ra imm)      = returnFrom ra imm >> setMSRBit BreakInProgress C
+exec (Rtid ra imm)      = returnFrom ra imm >> setMSRBit InterruptEnable S
+exec (Rtsd ra imm)      = returnFrom ra imm
+exec (Sb rd ra rb)      = store SByte rd ra (Register rb)
+exec (Sbi rd ra imm)    = store SByte rd ra (Immediate imm)
+exec (Sext8 rd ra)      = sext8 rd ra
+exec (Sext16 rd ra)     = sext16 rd ra
+exec (Sh rd ra rb)      = store SHalfWord rd ra (Register rb)
+exec (Shi rd ra imm)    = store SHalfWord rd ra (Immediate imm)
+exec (Sra rd ra)        = shiftRightArithmetic False rd ra
+exec (Src rd ra)        = shiftRightArithmetic True rd ra
+exec (Srl rd ra)        = shiftRightLogical rd ra
+exec (Sw rd ra rb)      = store SWord rd ra (Register rb)
+exec (Swi rd ra imm)    = store SWord rd ra (Immediate imm)
+exec (Wdc _ _)          = error "cache instructions not available"
+exec (Wic _ _)          = error "cache instructions not available"
+exec (Xor rd ra rb)     = execTypeA W32.xor rd ra rb
+exec (Xori rd ra imm)   = execTypeB W32.xor rd ra imm
 exec ins = error $ "instruction " ++ (show ins) ++ " not yet implemented"
 
 
@@ -259,6 +277,24 @@ load s rd ra y = do
                 return $ extend x
   setRegister rd val
 
+data StoreSize = SWord | SHalfWord | SByte
+
+store ∷ StoreSize
+      → MBReg
+      → MBReg
+      → ImmOrReg
+      → State MicroBlaze ()
+store s rd ra y = do
+  a ← getRegister ra
+  b ← case y of
+        Register rb   → getRegister rb
+        Immediate imm → return (W32.signExtendW16 imm)
+  d ← getRegister rd
+  case s of
+    SWord     → storeWord d a b
+    SHalfWord → storeHalfWord (W32.leastSignificantHalfWord d) a b
+    SByte     → storeByte (W32.leastSignificantByte d) a b
+
 
 -- ** Special Purpose Registers
 
@@ -292,3 +328,36 @@ link rd = do
 -- | sets the delay flag in the machine status register
 delay ∷ State MicroBlaze ()
 delay = setMSRBit DelayEnable S
+
+
+-- | returns the pc from a break, interrupt, or subroutine
+returnFrom ∷ MBReg → W16 → State MicroBlaze ()
+returnFrom ra imm = do
+  a ← getRegister ra
+  let b = W32.signExtendW16 imm
+  setRPC $ snd (W32.add a b C)
+
+sext8 ∷ MBReg → MBReg → State MicroBlaze ()
+sext8 rd ra = do
+  a ← getRegister ra
+  setRegister rd $ W32.signExtendW8 $ W32.leastSignificantByte a
+
+sext16 ∷ MBReg → MBReg → State MicroBlaze ()
+sext16 rd ra = do
+  a ← getRegister ra
+  setRegister rd $ W32.signExtendW16 $ W32.leastSignificantHalfWord a
+
+shiftRightArithmetic ∷ CarryFlag → MBReg → MBReg → State MicroBlaze ()
+shiftRightArithmetic carry_flag rd ra = do
+  a ← getRegister ra
+  c ← if carry_flag then getMSRBit Carry else return C
+  let (carry, d) = W32.arithmeticShiftRight a c
+  setMSRBit Carry carry
+  setRegister rd d
+
+shiftRightLogical ∷ MBReg → MBReg → State MicroBlaze ()
+shiftRightLogical rd ra = do
+  a ← getRegister ra
+  let (carry, d) = W32.logicalShiftRight a
+  setMSRBit Carry carry
+  setRegister rd d

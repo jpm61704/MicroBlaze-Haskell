@@ -27,9 +27,14 @@ module MachineState(
 
   -- ** Memory Managment
   , Address
+  -- *** Loading
   , loadWord
   , loadHalfWord
   , loadByte
+  -- *** Storing
+  , storeWord
+  , storeHalfWord
+  , storeByte
   ) where
 
 import           MachineState.MachineStatusRegister
@@ -256,3 +261,23 @@ loadByte = undefined
 
 -- | A 32-bit word memory address
 type Address = W32
+
+-- | stores a 32-bit word in memory
+--
+-- __NOT YET IMPLEMENTED__
+storeWord ∷ W32 → W32 →  W32 → State MicroBlaze ()
+storeWord = undefined
+
+-- | stores a 16-bit half-word in memory
+--
+-- __NOT YET IMPLEMENTED__
+storeHalfWord ∷ W16 → W32 → W32 → State MicroBlaze ()
+storeHalfWord = undefined
+
+-- | stores a 8-bit byte in memory
+--
+-- __NOT YET IMPLEMENTED__
+storeByte ∷ W8 → W32 → W32 → State MicroBlaze ()
+storeByte = undefined
+
+

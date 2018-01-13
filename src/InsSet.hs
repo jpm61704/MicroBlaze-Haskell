@@ -188,11 +188,13 @@ data Ins  = Add MBReg MBReg MBReg
           | Rtsd MBReg W16
           | Sb MBReg MBReg MBReg
           | Sbi MBReg MBReg W16
+          | Sext8 MBReg MBReg
           | Sext16 MBReg MBReg
           | Sh MBReg MBReg MBReg
           | Shi MBReg MBReg W16
           | Sra MBReg MBReg
           | Src MBReg MBReg
+          | Srl MBReg MBReg
           | Sw MBReg MBReg MBReg
           | Swi MBReg MBReg W16
           | Wdc MBReg MBReg

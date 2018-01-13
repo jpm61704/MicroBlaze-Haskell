@@ -137,6 +137,8 @@ negative :: W8 -> W8
 
 -- | tests negativity
 isNegative :: W8 -> Bit
+arithmeticShiftRight :: W8 -> Bit -> (Bit, W8)
+logicalShiftRight :: W8 -> (Bit, W8)
 
 
 module Boilerplate.W32
@@ -158,6 +160,7 @@ not :: W32 -> W32
 
 -- | equality
 (==) :: W32 -> W32 -> Bit
+xor :: W32 -> W32 -> W32
 
 -- | two's complement 16-bit sign extension
 signExtendW16 :: W16 -> W32
@@ -175,6 +178,12 @@ unsignedExtendW8 :: W8 -> W32
 --   
 --   example : 1010 0011 -&gt; 1010 0011 0000 0000
 backExtendW16 :: W16 -> W32
+
+-- | the least significant byte
+leastSignificantByte :: W32 -> W8
+
+-- | the least significat hald-word
+leastSignificantHalfWord :: W32 -> W16
 
 -- | addition with carries
 add :: W32 -> W32 -> Bit -> (Bit, W32)
@@ -207,6 +216,8 @@ lessThanOrEqualToZero :: W32 -> Bit
 --   
 --   rb + not(ra) + carry
 reverseSubtraction :: W32 -> W32 -> Bit -> (Bit, W32)
+arithmeticShiftRight :: W32 -> Bit -> (Bit, W32)
+logicalShiftRight :: W32 -> (Bit, W32)
 
 
 module InsSet
@@ -426,11 +437,13 @@ Rted :: MBReg -> W16 -> Ins
 Rtsd :: MBReg -> W16 -> Ins
 Sb :: MBReg -> MBReg -> MBReg -> Ins
 Sbi :: MBReg -> MBReg -> W16 -> Ins
+Sext8 :: MBReg -> MBReg -> Ins
 Sext16 :: MBReg -> MBReg -> Ins
 Sh :: MBReg -> MBReg -> MBReg -> Ins
 Shi :: MBReg -> MBReg -> W16 -> Ins
 Sra :: MBReg -> MBReg -> Ins
 Src :: MBReg -> MBReg -> Ins
+Srl :: MBReg -> MBReg -> Ins
 Sw :: MBReg -> MBReg -> MBReg -> Ins
 Swi :: MBReg -> MBReg -> W16 -> Ins
 Wdc :: MBReg -> MBReg -> Ins
@@ -542,6 +555,21 @@ loadHalfWord :: W32 -> State MicroBlaze W16
 --   <b>NOT YET IMPLEMENTED</b>
 loadByte :: W32 -> State MicroBlaze W8
 
+-- | stores a 32-bit word in memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
+storeWord :: W32 -> W32 -> W32 -> State MicroBlaze ()
+
+-- | stores a 16-bit half-word in memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
+storeHalfWord :: W16 -> W32 -> W32 -> State MicroBlaze ()
+
+-- | stores a 8-bit byte in memory
+--   
+--   <b>NOT YET IMPLEMENTED</b>
+storeByte :: W8 -> W32 -> W32 -> State MicroBlaze ()
+
 
 module Interpreter
 
@@ -611,6 +639,11 @@ Immediate :: W16 -> ImmOrReg
 -- | Loads data from memory, The two register offsets are added to obtain
 --   an address
 load :: LoadSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
+data StoreSize
+SWord :: StoreSize
+SHalfWord :: StoreSize
+SByte :: StoreSize
+store :: StoreSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
 
 -- | pulls either the MSR or PC register into given register
 moveFromSRegister :: MBReg -> MBSReg -> State MicroBlaze ()
@@ -624,6 +657,13 @@ link :: MBReg -> State MicroBlaze ()
 
 -- | sets the delay flag in the machine status register
 delay :: State MicroBlaze ()
+
+-- | returns the pc from a break, interrupt, or subroutine
+returnFrom :: MBReg -> W16 -> State MicroBlaze ()
+sext8 :: MBReg -> MBReg -> State MicroBlaze ()
+sext16 :: MBReg -> MBReg -> State MicroBlaze ()
+shiftRightArithmetic :: CarryFlag -> MBReg -> MBReg -> State MicroBlaze ()
+shiftRightLogical :: MBReg -> MBReg -> State MicroBlaze ()
 
 
 module TestData
