@@ -1,7 +1,12 @@
 {-# LANGUAGE UnicodeSyntax #-}
--- |
+ {-|
+Module : Decode
+Description : Decoding of well-formed instructions
+-}
 
-module Decode where
+
+module Decode( decode
+             ) where
 
 import           Boilerplate
 import           InsSet
@@ -18,6 +23,34 @@ data OpType = TypeA (MBReg → MBReg → MBReg → Ins)
             | Immed (W16 → Ins)
             | MFS (MBReg → MBSReg → Ins)
             | MTS (MBSReg → MBReg → Ins)
+            | Sext (MBReg → MBReg → Ins)
+
+
+decode ∷ W32 → Ins
+decode wd = case (decode' op extD extA imm) of
+              TypeA ins                    → ins rD rA rB
+              TypeB ins                    → ins rD rA imm
+              BranchA ins                  → ins rA rB zeroW11
+              BranchB ins                  → ins rA imm
+              UnconditionalBranchA ins     → ins rB
+              UnconditionalBranchLinkA ins → ins rD rB
+              UnconditionalBranchB ins     → ins imm
+              UnconditionalBranchLinkB ins → ins rD imm
+              Immed ins                    → ins imm
+              MFS ins                      → ins rD spr
+              MTS ins                      → ins spr rA
+              Sext ins                     → ins rD rA
+  where raw    = format wd
+        rD     = decodeRegister $ _dest raw
+        rA     = decodeRegister $ _srcA raw
+        rB     = decodeRegister $ regB raw
+        op     = _opcode raw
+        extD   = _dest raw
+        extA   = _srcA raw
+        imm    = _srcB raw
+        spr    = case end raw of
+                   C → RPC
+                   S → MSR
 
 
 
@@ -106,25 +139,35 @@ decode' op extD extA extB = case op of
   (W6 C C C C C S) → TypeA Rsub
   (W6 C C C C S S) → TypeA Rsubc
   (W6 C C C S S S) → TypeA Rsubkc
-  -- continue on rsubi
+  (W6 C C S C C S) → TypeB Rsubi
+  (W6 C C S C S S) → TypeB Rsubic
+  (W6 C C S S C S) → TypeB Rsubik
+  (W6 C C S S S S) → TypeB Rsubikc
+  (W6 S C S S C S) → case extD of
+                       (W5 S C C C S) → BranchB Rtid
+                       (W5 S C C C C) → BranchB Rtsd
+                       (W5 S C C S C) → BranchB Rtbd
+  (W6 S S C S C C) → TypeA Sb
+  (W6 S S S S C C) → TypeB Sbi
+  (W6 S C C S C C) → case extB of
+                       (W16 C C C C C C C C C S S C C C C S) → Sext Sext16
+                       (W16 C C C C C C C C C S S C C C C C) → Sext Sext8
+                       (W16 C C C C C C C C C C C C C C C S) → Sext Sra
+                       (W16 C C C C C C C C C C S C C C C S) → Sext Src
+                       (W16 C C C C C C C C C S C C C C C S) → Sext Srl
+                       (W16 _ _ _ _ _ C C C C S S C C S C C) → error "Cache operations not supported"
+  (W6 S S C S C S) → TypeA Sh
+  (W6 S S S S C S) → TypeB Shi
+  (W6 S S C S S C) → TypeA Sw
+  (W6 S S S S S C) → TypeB Swi
+  (W6 S C C C S C) → TypeA Xor
+  (W6 S C S C S C) → TypeB Xori
 
 
 
 
-decode ∷ W32 → Ins
-decode wd = case (decode' op extD extA imm) of
-  TypeA ins   → ins rD rA rB
-  TypeB ins   → ins rD rA imm
-  BranchA ins → ins rA rB zeroW11
-  BranchB ins → ins rA imm
-  where raw    = format wd
-        rD     = decodeRegister $ _dest raw
-        rA     = decodeRegister $ _srcA raw
-        rB     = decodeRegister $ regB raw
-        op     = _opcode raw
-        extD   = _dest raw
-        extA   = _srcA raw
-        imm    = _srcB raw
+
+
 
 
 data RawIns = RIns { _opcode ∷ W6
@@ -137,7 +180,15 @@ regB ins = case _srcB ins of
   (W16 b0 b1 b2 b3 b4 _ _ _ _ _ _ _ _ _ _ _) → W5 b0 b1 b2 b3 b4
 
 format ∷ W32 → RawIns
-format = undefined
+format (W32 (W8 o0 o1 o2 o3 o4 o5 d0 d1)
+            (W8 d2 d3 d4 a0 a1 a2 a3 a4)
+            (W8 b0 b1 b2 b3 b4 b5 b6 b7)
+            (W8 b8 b9 b10 b11 b12 b13 b14 b15)) = RIns op d a b
+  where op = W6 o0 o1 o2 o3 o4 o5
+        d  = W5 d0 d1 d2 d3 d4
+        a  = W5 a0 a1 a2 a3 a4
+        b  = W16 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
+
 
 
 
@@ -203,3 +254,40 @@ fourthBitSet _              = False
 fifthBitSet ∷ W5 → Bool
 fifthBitSet (W5 _ _ _ _ S) = True
 fifthBitSet _              = False
+
+end ∷ RawIns → Bit
+end x = case _srcB x of
+  (W16 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ y) → y
+
+data W32Index = B0
+              | B1
+              | B3
+              | B4
+              | B5
+              | B6
+              | B7
+              | B8
+              | B9
+              | B10
+              | B11
+              | B12
+              | B13
+              | B14
+              | B15
+              | B16
+              | B17
+              | B18
+              | B19
+              | B20
+              | B21
+              | B22
+              | B23
+              | B24
+              | B25
+              | B26
+              | B27
+              | B28
+              | B29
+              | B30
+              | B31
+

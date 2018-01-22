@@ -446,7 +446,7 @@ Src :: MBReg -> MBReg -> Ins
 Srl :: MBReg -> MBReg -> Ins
 Sw :: MBReg -> MBReg -> MBReg -> Ins
 Swi :: MBReg -> MBReg -> W16 -> Ins
-Wdc :: MBReg -> MBReg -> Ins
+Wdc :: MBReg -> MBReg -> MBReg -> Ins
 Wic :: MBReg -> MBReg -> Ins
 Xor :: MBReg -> MBReg -> MBReg -> Ins
 Xori :: MBReg -> MBReg -> W16 -> Ins
@@ -458,36 +458,7 @@ instance GHC.Show.Show InsSet.MBSize
 
 
 module Decode
-data OpType
-TypeA :: (MBReg -> MBReg -> MBReg -> Ins) -> OpType
-TypeB :: (MBReg -> MBReg -> W16 -> Ins) -> OpType
-BranchA :: (MBReg -> MBReg -> W11 -> Ins) -> OpType
-BranchB :: (MBReg -> W16 -> Ins) -> OpType
-UnconditionalBranchA :: (MBReg -> Ins) -> OpType
-UnconditionalBranchLinkA :: (MBReg -> MBReg -> Ins) -> OpType
-UnconditionalBranchB :: (W16 -> Ins) -> OpType
-UnconditionalBranchLinkB :: (MBReg -> W16 -> Ins) -> OpType
-Immed :: (W16 -> Ins) -> OpType
-MFS :: (MBReg -> MBSReg -> Ins) -> OpType
-MTS :: (MBSReg -> MBReg -> Ins) -> OpType
-decode' :: W6 -> W5 -> W5 -> W16 -> OpType
 decode :: W32 -> Ins
-data RawIns
-RIns :: W6 -> W5 -> W5 -> W16 -> RawIns
-[_opcode] :: RawIns -> W6
-[_dest] :: RawIns -> W5
-[_srcA] :: RawIns -> W5
-[_srcB] :: RawIns -> W16
-regB :: RawIns -> W5
-format :: W32 -> RawIns
-decodeRegister :: W5 -> MBReg
-back11 :: W16 -> W11
-zeroW11 :: W11
-firstBitSet :: W5 -> Bool
-secondBitSet :: W5 -> Bool
-thirdBitSet :: W5 -> Bool
-fourthBitSet :: W5 -> Bool
-fifthBitSet :: W5 -> Bool
 instance GHC.Show.Show Decode.RawIns
 
 
