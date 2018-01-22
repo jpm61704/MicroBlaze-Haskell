@@ -1,2 +1,2 @@
 # MicroBlaze
-Link to the docs: https://jpm61704.github.io/MicroBlaze-Haskell/MicroBlaze/index.html
+Link to the docs: https://jpm61704.github.io/MicroBlaze-Haskell/
