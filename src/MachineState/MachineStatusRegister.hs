@@ -1,6 +1,6 @@
 {-|
 Module : MachineState.MachineStatusRegister
-Description : functions and data for contolling machine status flags
+
 -}
 {-# LANGUAGE UnicodeSyntax #-}
 module MachineState.MachineStatusRegister

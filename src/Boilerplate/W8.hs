@@ -1,6 +1,6 @@
 {-|
 Module : Boilerplate.W8
-Description : Utility functions for working with Byte-sized data
+
 -}
 {-# LANGUAGE UnicodeSyntax #-}
 module Boilerplate.W8 where

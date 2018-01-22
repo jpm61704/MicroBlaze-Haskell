@@ -1,6 +1,6 @@
 {-|
 Module : Boilerplate.Bit
-Description : Utility functions for working with Binary data
+
 -}
 {-# LANGUAGE UnicodeSyntax #-}
 module Boilerplate.Bit where

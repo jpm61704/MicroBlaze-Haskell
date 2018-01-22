@@ -1,6 +1,6 @@
 {-|
 Module : Boilerplate.W32
-Description : Utility functions for working with 32-bit data
+
 -}
 {-# LANGUAGE UnicodeSyntax #-}
 module Boilerplate.W32 where
