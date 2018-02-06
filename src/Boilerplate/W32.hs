@@ -18,6 +18,10 @@ zero = W32 (W8.zero) (W8.zero) (W8.zero) (W8.zero)
 one :: W32
 one = W32 (W8.zero) (W8.zero) (W8.zero) (W8.one)
 
+four ∷ W32
+four = W32 (W8.zero) (W8.zero) (W8.zero) (W8 C C C C C S C C)
+
+
 -- * Logic
 
 -- | Logical AND

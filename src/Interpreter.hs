@@ -8,10 +8,45 @@ module Interpreter where
 import           Boilerplate
 import qualified Boilerplate.Bit                    as B
 import qualified Boilerplate.W32                    as W32
+import           Control.Monad.Resumption.Reactive
 import           Control.Monad.State.Lazy
+import           Decode
 import           InsSet
 import           MachineState
+import           MachineState.InstructionBuffer
 import           MachineState.MachineStatusRegister
+
+
+executeNext ∷ State MicroBlaze ()
+executeNext = do
+  maybeIns ← pullExec
+  case maybeIns of
+    (Just ins) → exec ins
+    Nothing    → return ()
+
+decodeNext :: State MicroBlaze (Maybe Ins)
+decodeNext = do
+  maybeDecode ← pullDecode
+  case maybeDecode of
+    (Just d) → return $ Just $ decode d
+    Nothing  → return Nothing
+
+
+
+nextPCAddress ∷ State MicroBlaze Address
+nextPCAddress = do
+  pc ← getRPC
+  setRPC $ snd $ W32.add pc W32.four C
+  return pc
+
+
+
+
+
+
+
+
+
 
 
 -- * Exec Function
@@ -125,7 +160,7 @@ exec (Src rd ra)        = shiftRightArithmetic True rd ra
 exec (Srl rd ra)        = shiftRightLogical rd ra
 exec (Sw rd ra rb)      = store SWord rd ra (Register rb)
 exec (Swi rd ra imm)    = store SWord rd ra (Immediate imm)
-exec (Wdc _ _ _)        = error "cache instructions not available"
+exec (Wdc _ _)        = error "cache instructions not available"
 exec (Wic _ _)          = error "cache instructions not available"
 exec (Xor rd ra rb)     = execTypeA W32.xor rd ra rb
 exec (Xori rd ra imm)   = execTypeB W32.xor rd ra imm

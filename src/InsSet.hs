@@ -1,4 +1,4 @@
-{-|
+ {-|
 Module : InsSet
 Description : Data definitions for the MicroBlaze Instruction Set
 -}
@@ -197,7 +197,7 @@ data Ins  = Add MBReg MBReg MBReg
           | Srl MBReg MBReg
           | Sw MBReg MBReg MBReg
           | Swi MBReg MBReg W16
-          | Wdc MBReg MBReg MBReg
+          | Wdc MBReg MBReg
           | Wic MBReg MBReg
           | Xor MBReg MBReg MBReg
           | Xori MBReg MBReg W16
