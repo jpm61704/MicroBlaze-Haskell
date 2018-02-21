@@ -121,10 +121,10 @@ instance GHC.Show.Show Boilerplate.W26
 instance GHC.Show.Show Boilerplate.W11
 instance GHC.Show.Show Boilerplate.W6
 instance GHC.Show.Show Boilerplate.W5
-instance GHC.Show.Show Boilerplate.W32
 instance GHC.Show.Show Boilerplate.W16
-instance GHC.Show.Show Boilerplate.W8
 instance GHC.Show.Show Boilerplate.Bit
+instance GHC.Show.Show Boilerplate.W8
+instance GHC.Show.Show Boilerplate.W32
 
 
 module Boilerplate.Bit
@@ -149,6 +149,7 @@ plus :: Bit -> Bit -> Bit -> (Bit, Bit)
 
 -- | Binary subtraction with carries
 minus :: Bit -> Bit -> Bit -> (Bit, Bit)
+toInteger :: Bit -> Int
 
 
 module Boilerplate.W8
@@ -207,6 +208,8 @@ negative :: W8 -> W8
 isNegative :: W8 -> Bit
 arithmeticShiftRight :: W8 -> Bit -> (Bit, W8)
 logicalShiftRight :: W8 -> (Bit, W8)
+toInteger :: W8 -> Int
+fromInteger :: Int -> W8
 
 
 module Boilerplate.W32
@@ -287,6 +290,8 @@ lessThanOrEqualToZero :: W32 -> Bit
 reverseSubtraction :: W32 -> W32 -> Bit -> (Bit, W32)
 arithmeticShiftRight :: W32 -> Bit -> (Bit, W32)
 logicalShiftRight :: W32 -> (Bit, W32)
+toInteger :: W32 -> Int
+fromInteger :: Int -> W32
 
 
 module InsSet
@@ -522,6 +527,7 @@ Xori :: MBReg -> MBReg -> W16 -> Ins
 instance GHC.Show.Show InsSet.Ins
 instance GHC.Show.Show InsSet.MBSReg
 instance GHC.Enum.Enum InsSet.MBReg
+instance GHC.Read.Read InsSet.MBReg
 instance GHC.Show.Show InsSet.MBReg
 instance GHC.Show.Show InsSet.MBSize
 
@@ -573,6 +579,7 @@ getStatus :: MachineStatusBit -> RMSR -> Bit
 
 -- | sets the machine status bit indicated to the desired boolean value
 setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
+instance GHC.Show.Show MachineState.MachineStatusRegister.MachineStatusBit
 
 
 module MachineState
@@ -619,6 +626,9 @@ getRegister :: MBReg -> State MicroBlaze MBWord
 
 -- | sets the value at a specified register
 setRegister :: MBReg -> MBWord -> State MicroBlaze ()
+
+-- | read a given register
+readRegister :: MBReg -> MBRegisters -> MBWord
 type Address = W32
 
 -- | loads a 32-bit word from memory
@@ -654,6 +664,14 @@ fetch :: Address -> State MicroBlaze W32
 pushInstructionBuffer :: InstructionBuffer -> State MicroBlaze ()
 pullDecode :: State MicroBlaze (Maybe W32)
 pullExec :: State MicroBlaze (Maybe Ins)
+
+
+module IO
+printRegisters :: MicroBlaze -> IO ()
+printRPC :: MicroBlaze -> IO ()
+printRegister :: MicroBlaze -> MBReg -> IO ()
+printMicroBlaze :: MicroBlaze -> IO ()
+printStatus :: RMSR -> IO ()
 
 
 module Interpreter
@@ -754,7 +772,7 @@ shiftRightArithmetic :: CarryFlag -> MBReg -> MBReg -> State MicroBlaze ()
 shiftRightLogical :: MBReg -> MBReg -> State MicroBlaze ()
 
 
-module IO
+module MachineState.Execution
 data InboundSignals
 In :: Maybe (MBSize, LoadData, MBReg) -> Maybe W32 -> InboundSignals
 [_readData] :: InboundSignals -> Maybe (MBSize, LoadData, MBReg)
@@ -775,6 +793,13 @@ unpackWrite :: Ins -> Maybe (MBReg, MBReg, Either W16 MBReg, MBSize)
 processLoad :: Ins -> State MicroBlaze (Maybe (Address, MBReg, MBSize))
 unpackLoad :: Ins -> Maybe (MBReg, MBReg, Either W16 MBReg, MBSize)
 processIncomingMemory :: InboundSignals -> State MicroBlaze ()
+
+
+module REPL
+repl :: OutboundSignals -> IO (InboundSignals)
+postWrite :: Maybe (Address, StoreData, MBSize) -> IO ()
+getRead :: Maybe (Address, MBReg, MBSize) -> IO (Maybe (MBSize, LoadData, MBReg))
+buildInstruction :: Address -> IO (Ins)
 
 
 module TestData

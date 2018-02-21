@@ -50,7 +50,7 @@ data MBReg = R0 -- ^ Dedicated, Value 0
            | R29 -- ^ Non-volatile, must be saved across function calls
            | R30 -- ^ Non-volatile, must be saved across function calls
            | R31 -- ^ Non-volatile, must be saved across function calls
-           deriving (Show,Enum)
+           deriving (Show,Read,Enum)
 
 --
 -- the Microblaze instruction set;
@@ -201,4 +201,4 @@ data Ins  = Add MBReg MBReg MBReg
           | Wic MBReg MBReg
           | Xor MBReg MBReg MBReg
           | Xori MBReg MBReg W16
-          deriving Show
+          deriving (Show)

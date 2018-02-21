@@ -45,7 +45,7 @@ data MachineStatusBit = CarryCopy
                       | InterruptEnable
                       | BuslockEnable
                       | DelayEnable
-
+                      deriving Show
 
 -- | sets the machine status bit indicated to the desired boolean value
 setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
@@ -71,6 +71,7 @@ getStatus BreakInProgress        = _bip
 getStatus Carry                  = _c
 getStatus InterruptEnable        = _ie
 getStatus BuslockEnable          = _be
+getStatus DelayEnable            = _de
 
 -- | a zero-initialized (All False) MSR
 emptyRMSR :: RMSR

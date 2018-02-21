@@ -24,6 +24,7 @@ module MachineState(
   -- *** Register Manipulation
   , getRegister
   , setRegister
+  , readRegister
 
   -- ** Memory Managment
   , Address

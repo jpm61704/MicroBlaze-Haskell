@@ -120,3 +120,31 @@ arithmeticShiftRight (W8 b0 b1 b2 b3 b4 b5 b6 b7) ci = (b7, W8 ci b0 b1 b2 b3 b4
 
 logicalShiftRight ∷ W8 → (Bit, W8)
 logicalShiftRight (W8 b0 b1 b2 b3 b4 b5 b6 b7) = (b7, W8 C b0 b1 b2 b3 b4 b5 b6)
+
+toInteger ∷ W8 → P.Int
+toInteger (W8 b0 b1 b2 b3 b4 b5 b6 b7) = P.foldr (P.+) 0 [b7',b6',b5',b4',b3',b2',b1',b0']
+  where b7' = (B.toInteger b7)
+        b6' = (B.toInteger b6) P.* 2 P.^ 1
+        b5' = (B.toInteger b5) P.* 2 P.^ 2
+        b4' = (B.toInteger b4) P.* 2 P.^ 3
+        b3' = (B.toInteger b3) P.* 2 P.^ 4
+        b2' = (B.toInteger b2) P.* 2 P.^ 5
+        b1' = (B.toInteger b1) P.* 2 P.^ 6
+        b0' = (B.toInteger b0) P.* 2 P.^ 7
+
+
+fromInteger ∷ P.Int → W8
+fromInteger x = W8 b7 b6 b5 b4 b3 b2 b1 b0
+  where (x0, b0) = divMod2 x
+        (x1, b1) = divMod2 x0
+        (x2, b2) = divMod2 x1
+        (x3, b3) = divMod2 x2
+        (x4, b4) = divMod2 x3
+        (x5, b5) = divMod2 x4
+        (x6, b6) = divMod2 x5
+        (x7, b7) = divMod2 x6
+        divMod2  = (\x → case P.divMod x 2 of
+                       (d, 0) → (d, C)
+                       (d, 1) → (d, S)
+                       (d, _) → P.error "you broke math")
+

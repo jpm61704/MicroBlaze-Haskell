@@ -22,14 +22,20 @@ instance P.Show Bit where
 
 -- | Standard Byte defintion
 -- Supporting functions can be found in "Boilerplate.W8"
-data W8  = W8 Bit Bit Bit Bit Bit Bit Bit Bit deriving P.Show
+data W8  = W8 Bit Bit Bit Bit Bit Bit Bit Bit
+
+instance P.Show W8 where
+  show (W8 b0 b1 b2 b3 b4 b5 b6 b7) = P.concatMap P.show [b0, b1, b2, b3, b4, b5, b6, b7]
 
 -- | 16-bit data
 data W16 = W16 Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit deriving P.Show
 
 -- | 32-bit data
 -- Supporting functions can be found in "Boilerplate.W32"
-data W32 = W32 W8 W8 W8 W8 deriving (P.Show)
+data W32 = W32 W8 W8 W8 W8
+
+instance P.Show W32 where
+  show (W32 b0 b1 b2 b3) = P.concatMap P.show [b0, b1, b2, b3]
 
 -- * Unusual/Rare-Sized Bit Data
 

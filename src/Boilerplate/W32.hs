@@ -165,3 +165,25 @@ logicalShiftRight (W32 b0 b1 b2 b3) = (c3, W32 b0' b1' b2' b3')
         (c2, b2') = W8.arithmeticShiftRight b2 c1
         (c3, b3') = W8.arithmeticShiftRight b3 c2
 
+toInteger ∷ W32 → P.Int
+toInteger (W32 b0 b1 b2 b3) = P.foldr (P.+) 0  [b0', b1', b2', b3']
+  where b3' = W8.toInteger b3
+        b2' = (W8.toInteger b2) P.* (256 P.^ 1)
+        b1' = (W8.toInteger b1) P.* (256 P.^ 2)
+        b0' = (W8.toInteger b0) P.* (256 P.^ 3)
+
+
+fromInteger :: P.Int → W32
+fromInteger x = W32 b3 b2 b1 b0
+  where (r0, b0) = w8FromInteger' x
+        (r1, b1) = w8FromInteger' r0
+        (r2, b2) = w8FromInteger' r1
+        (_ , b3) = w8FromInteger' r2
+        w8FromInteger' = (\x → let y = W8.fromInteger x in ((P.div x (2 P.^ 8)), y))
+
+
+
+
+
+
+

@@ -70,3 +70,15 @@ minus S C C = (C,S)
 minus S C S = (C,C)
 minus S S C = (C,C)
 minus S S S = (S,C)
+
+
+
+toInteger ∷ Bit → P.Int
+toInteger C = 0
+toInteger S = 1
+
+
+
+
+
+
