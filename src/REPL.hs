@@ -45,7 +45,19 @@ buildInstruction x = do
     putStrLn $ "What is the next instruction to be executed? (Location: " ++ (show (W32.toInteger x)) ++ ")"
     x ← getLine
     -- continue here
-
+    
     return (⊥)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
