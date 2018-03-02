@@ -15,7 +15,7 @@ import           MachineState
 import           Prelude.Unicode
 
 data InboundSignals = In { _readData    ∷ Maybe (MBSize, LoadData, MBReg)
-                         , _instruction ∷ Maybe W32
+                         , _instruction ∷ Maybe Ins
                          }
 
 data OutboundSignals = Out { _nextInstruction ∷ Address
@@ -28,15 +28,15 @@ type LoadData  = W32
 
 type MBlazeRe = ReacT InboundSignals OutboundSignals (State MicroBlaze)
 
-fde ∷ InboundSignals → MBlazeRe ()
+fde ∷ InboundSignals → MBlazeRe InboundSignals
 fde i = do
   st ← lift get
   lift $ processIncomingMemory i
   m_ins ← case _instruction i of
                 Just raw_ins → do
-                  let ins =  decode raw_ins -- unsafe
-                  lift $ exec ins
-                  return (Just ins)
+                  -- let ins =  decode raw_ins -- unsafe
+                  lift $ exec raw_ins
+                  return (Just raw_ins)
                 Nothing      → return Nothing
   x ← lift $ makeOutbound m_ins
   lift $ incrementPC

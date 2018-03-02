@@ -3,6 +3,9 @@ module ParserMicroBlaze where
 import System.IO
 import System.Environment
 import Parsing
+import InsSet
+import Boilerplate
+import qualified Boilerplate.W16 as W16
 
 -- utility function to expand ~ in filenames
 expandFilePath :: FilePath -> IO FilePath
@@ -20,21 +23,33 @@ parseMB p_ = do p      <- expandFilePath p_
                    [(ss,_)] -> return ss
                    _         -> fail "Too many parses"
 
+parseREPL :: IO [Command]
+parseREPL = do
+  s <- getLine
+  let pr = parse (many1 parseCommand) s
+  case pr of
+    [] -> fail "arrrgh!"
+    [(ss,_)] -> return ss
+    _        -> fail "Too many parses"
+  
+
 data Op    = Plus | Minus | Times | Div deriving Show
 data Exp   = Const Int | Aexp Op Exp Exp deriving Show
 data Oper = Register Int deriving Show
 data Imm = Immed Int deriving Show
 
+type Command = Ins
+
 parseOp = do
    isym <- (symbol "+") +++ (symbol "-") +++ (symbol "*") +++ (symbol "/")
    return (tr isym)
-      where 
+      where
          tr "+" = Plus
          tr "-" = Minus
          tr "*" = Times
          tr "/" = Div
 
-parseConst = do 
+parseConst = do
    i <- integer
    return (Const i)
 
@@ -48,16 +63,63 @@ parseAexp = do
    symbol ")"
    return (Aexp op e1 e2)
 
-parseReg :: Parser Oper
+parseReg :: Parser MBReg
 parseReg = do
    char 'r'
    n <- natural
-   return (Register n)
+   case numToReg n of
+     Just reg -> return reg
+     Nothing -> undefined
 
-parseImm :: Parser Imm
+parseSpecReg :: Parser MBSReg
+parseSpecReg = undefined
+
+
+  
+numToReg :: Int -> Maybe MBReg
+numToReg x 
+  | x < 0 || x > 32 = Nothing
+  | otherwise = Just $ case x of
+               0 -> R0
+               1 -> R1
+               2 -> R2
+               3 -> R3
+               4 -> R4
+               5 -> R5
+               6 -> R6
+               7 -> R7
+               8 -> R8
+               9 -> R9
+               10 -> R10
+               11 -> R11
+               12 -> R12
+               13 -> R13
+               14 -> R14
+               15 -> R15
+               16 -> R16
+               17 -> R17
+               18 -> R18
+               19 -> R19
+               20 -> R20
+               21 -> R21
+               22 -> R22
+               23 -> R23
+               24 -> R24
+               25 -> R25
+               26 -> R26
+               27 -> R27
+               28 -> R28
+               29 -> R29
+               30 -> R30
+               31 -> R31
+    
+               
+
+
+parseImm :: Parser W16
 parseImm = do
-   n <- natural
-   return (Immed n)
+   n <- natural   
+   return $ W16.fromInteger n
 
 parseExp = parseConst +++ parseAexp
 
@@ -157,10 +219,10 @@ parseCommand =       parseAdd        +++
                      parseBri        +++
                      parseBrai       +++
                      parseBrid       +++
-                     parseBraid      +++
-                     parseIm         +++
-                     parseLabel      +++
-                     parseNop 
+                     parseBraid  --    +++
+--                     parseIm         +++
+  --                   parseLabel      
+
 
 parseAdd :: Parser Command
 parseAdd = do
@@ -653,7 +715,7 @@ parseBeq = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Beq r1 r2)
+   return (Beq r1 r2 w11_blank)
 
 parseBeqd :: Parser Command
 parseBeqd = do
@@ -661,7 +723,7 @@ parseBeqd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Beqd r1 r2)
+   return (Beqd r1 r2 w11_blank)
 
     
 parseBeqi :: Parser Command
@@ -686,7 +748,7 @@ parseBge = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bge r1 r2)
+   return (Bge r1 r2 w11_blank)
 
 parseBged :: Parser Command
 parseBged = do
@@ -694,7 +756,7 @@ parseBged = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bged r1 r2)
+   return (Bged r1 r2 w11_blank)
 
     
 parseBgei :: Parser Command
@@ -719,7 +781,7 @@ parseBgt = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bgt r1 r2)
+   return (Bgt r1 r2 w11_blank)
 
 parseBgtd :: Parser Command
 parseBgtd = do
@@ -727,7 +789,7 @@ parseBgtd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bgtd r1 r2)
+   return (Bgtd r1 r2 w11_blank)
 
     
 parseBgti :: Parser Command
@@ -752,7 +814,7 @@ parseBle = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Ble r1 r2)
+   return (Ble r1 r2 w11_blank)
 
 parseBled :: Parser Command
 parseBled = do
@@ -760,7 +822,7 @@ parseBled = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bled r1 r2)
+   return (Bled r1 r2 w11_blank)
 
     
 parseBlei :: Parser Command
@@ -786,7 +848,7 @@ parseBlt = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Blt r1 r2)
+   return (Blt r1 r2 w11_blank)
 
 parseBltd :: Parser Command
 parseBltd = do
@@ -794,7 +856,7 @@ parseBltd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bltd r1 r2)
+   return (Bltd r1 r2 w11_blank)
 
     
 parseBlti :: Parser Command
@@ -820,7 +882,7 @@ parseBne = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bne r1 r2)
+   return (Bne r1 r2 w11_blank)
 
 parseBned :: Parser Command
 parseBned = do
@@ -828,7 +890,7 @@ parseBned = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bned r1 r2)
+   return (Bned r1 r2 w11_blank)
 
     
 parseBnei :: Parser Command
@@ -902,13 +964,13 @@ parseMfs = do
    symbol "mfs"
    r1 <- parseReg
    symbol ","
-   r2 <- parseReg
+   r2 <- parseSpecReg
    return (Mfs r1 r2)
     
 parseMts :: Parser Command
 parseMts = do
    symbol "mts"
-   r1 <- parseReg
+   r1 <- parseSpecReg
    symbol ","
    r2 <- parseReg
    return (Mts r1 r2)
@@ -919,8 +981,8 @@ parseRtbd = do
    symbol "rtbd"
    r1 <- parseReg
    symbol ","
-   r2 <- parseReg
-   return (Rtbd r1 r2)
+   imm <- parseImm
+   return (Rtbd r1 imm)
     
 parseRtid :: Parser Command
 parseRtid = do
@@ -935,8 +997,8 @@ parseRtsd = do
    symbol "rtsd"
    r1 <- parseReg
    symbol ","
-   r2 <- parseReg
-   return (Rtsd r1 r2)
+   imm <- parseImm
+   return (Rtsd r1 imm)
 
 parseSextHex :: Parser Command
 parseSextHex = do
@@ -944,7 +1006,7 @@ parseSextHex = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (SextHex r1 r2)
+   return (Sext16 r1 r2)
     
 parseSextOct :: Parser Command
 parseSextOct = do
@@ -952,7 +1014,7 @@ parseSextOct = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (SextOct r1 r2)
+   return (Sext8 r1 r2)
 
 parseSra :: Parser Command
 parseSra = do
@@ -1028,6 +1090,11 @@ parseBraid = do
    imm1 <- parseImm
    return (Braid imm1)
 
+
+w11_blank = W11 C C C C C C C C C C C
+
+
+{-
 parseIm :: Parser Command
 parseIm = do
   symbol "imm"
@@ -1039,13 +1106,15 @@ parseLabel = do
         symbol "label:"
         imm1 <- parseImm
         return (Label imm1)
-
+-}
+{-
 parseNop :: Parser Command
 parseNop = do
   symbol "nop"
   return (Nop)
-
-data Command =  Add Oper Oper Oper        |
+-}
+{-
+Command =  Add Oper Oper Oper        |
                 Addc Oper Oper Oper       |
                 Addk Oper Oper Oper         |
                 Addkc Oper Oper Oper      |
@@ -1146,3 +1215,4 @@ data Command =  Add Oper Oper Oper        |
                 Label Imm                       |
                 Nop
              deriving Show
+-}

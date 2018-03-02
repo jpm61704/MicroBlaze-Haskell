@@ -8,17 +8,15 @@ import           InsSet
 import           MachineState
 import           MachineState.Execution
 import           Prelude.Unicode
+import ParserMicroBlaze
 
 repl ∷ OutboundSignals → IO (InboundSignals)
 repl (Out next_instr_addr r w) = do
   postWrite w
-  getRead r
-  buildInstruction next_instr_addr
-  -- read instruction
-  -- encode instruction
+  rd <- getRead r
+  ins <- buildInstruction next_instr_addr
+  return $ In rd (Just ins)
 
-
-  return (⊥)
 
 
 postWrite ∷ Maybe (Address, StoreData, MBSize) → IO ()
@@ -43,10 +41,12 @@ getRead (Just (a, reg, s)) = do
 buildInstruction ∷ Address → IO (Ins)
 buildInstruction x = do
     putStrLn $ "What is the next instruction to be executed? (Location: " ++ (show (W32.toInteger x)) ++ ")"
-    x ← getLine
-    -- continue here
+    x <- parseREPL
+    case x of
+      (ins:_) -> return ins
+      _ -> error "bad input"
     
-    return (⊥)
+    
 
 
 
