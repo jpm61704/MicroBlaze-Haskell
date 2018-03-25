@@ -20,15 +20,19 @@ data InboundSignals = In { _readData    ∷ Maybe (MBSize, LoadData, MBReg)
 
 data OutboundSignals = Out { _nextInstruction ∷ Address
                            , _read            ∷ Maybe (Address, MBReg, MBSize)
-                           , _write           ∷ Maybe (Address, StoreData, MBSize) }
+                           , _write           ∷ Maybe (Address, StoreData, MBSize)
+                           , _st             :: MicroBlaze }
 
 type StoreData = W32
 type LoadData  = W32
 
 
-type MBlazeRe = ReacT InboundSignals OutboundSignals (State MicroBlaze)
+type MBlazeRe m = ReacT InboundSignals OutboundSignals (StateT MicroBlaze m)
 
-fde ∷ InboundSignals → MBlazeRe InboundSignals
+startFDE :: (Monad m) => MBlazeRe m ()
+startFDE = fde $ In Nothing Nothing
+
+fde ∷ (Monad m) => InboundSignals → MBlazeRe m () 
 fde i = do
   st ← lift get
   lift $ processIncomingMemory i
@@ -43,19 +47,23 @@ fde i = do
   i' ← signal x
   fde i'
 
-incrementPC ∷ State MicroBlaze ()
+incrementPC ∷ (Monad m) => StateT MicroBlaze m ()
 incrementPC = do
   pc ← getRPC
   let (c, pc') = W32.add pc W32.four C
   setRPC pc'
 
-makeOutbound :: Maybe Ins → State MicroBlaze OutboundSignals
-makeOutbound (Just ins)   = liftM3 Out next_ins o_read o_write
+makeOutbound :: (Monad m) => Maybe Ins → StateT MicroBlaze m OutboundSignals
+makeOutbound Nothing      = do
+  x <- get
+  return $ Out W32.zero Nothing Nothing x
+makeOutbound (Just ins)   = liftM4 Out next_ins o_read o_write o_state
   where next_ins = getRPC
         o_write  = processWrite ins
         o_read   = processLoad ins
+        o_state  = get
 
-processWrite ∷ Ins → State MicroBlaze (Maybe (Address, StoreData, MBSize))
+processWrite ∷ (Monad m) => Ins → StateT MicroBlaze m (Maybe (Address, StoreData, MBSize))
 processWrite ins = do
   case unpackWrite ins of
     Just (rD, rA, Right rB, size) → do
@@ -83,7 +91,7 @@ unpackWrite ins = case ins of
   _             → Nothing
 
 
-processLoad ∷ Ins → State MicroBlaze (Maybe (Address, MBReg, MBSize))
+processLoad ∷ (Monad m) => Ins → StateT MicroBlaze m (Maybe (Address, MBReg, MBSize))
 processLoad ins = do
   case unpackLoad ins of
     Just (rD, rA, Right rB, size) → do
@@ -107,7 +115,7 @@ unpackLoad ins = case ins of
   _              → Nothing
 
 
-processIncomingMemory ∷ InboundSignals → State MicroBlaze ()
+processIncomingMemory ∷ (Monad m) => InboundSignals → StateT MicroBlaze m ()
 processIncomingMemory (In (Just (size, w, rD)) _) = case size of
   WordSize     → setRegister rD w
   HalfWordSize → (⊥)

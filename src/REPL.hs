@@ -9,12 +9,15 @@ import           MachineState
 import           MachineState.Execution
 import           Prelude.Unicode
 import ParserMicroBlaze
+import Control.Monad.State.Lazy
+import IO
 
-repl ∷ OutboundSignals → IO (InboundSignals)
-repl (Out next_instr_addr r w) = do
-  postWrite w
-  rd <- getRead r
-  ins <- buildInstruction next_instr_addr
+repl ∷ OutboundSignals → StateT MicroBlaze IO (InboundSignals)
+repl (Out next_instr_addr r w st) = do
+  lift $ printMicroBlaze st
+  lift $ postWrite w
+  rd <- lift $ getRead r
+  ins <- lift $ buildInstruction next_instr_addr
   return $ In rd (Just ins)
 
 
