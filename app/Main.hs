@@ -1,5 +1,8 @@
 module Main where
 
+import REPL
 
 main :: IO ()
-main = putStrLn "Hello World"
+main = do
+  runFreshRepl
+  return ()

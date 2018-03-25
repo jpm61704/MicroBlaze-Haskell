@@ -11,6 +11,9 @@ import           Prelude.Unicode
 import ParserMicroBlaze
 import Control.Monad.State.Lazy
 import IO
+import Control.Monad.Resumption.Reactive
+
+runFreshRepl = runStateT (runReacT startFDE repl) newMicroBlaze
 
 repl ∷ OutboundSignals → StateT MicroBlaze IO (InboundSignals)
 repl (Out next_instr_addr r w st) = do
