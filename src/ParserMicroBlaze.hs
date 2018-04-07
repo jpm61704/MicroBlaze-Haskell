@@ -20,7 +20,9 @@ parseMB p_ = do p      <- expandFilePath p_
                 let pr = parse (many1 parseCommand) s
                 case pr of
                    [] -> fail "Argghhh!"
-                   [(ss,_)] -> return ss
+    (require 'haskell-prettify "~/.emacs.d/lisp/prettify-alists/haskell-prettify.el" t)
+(add-hook 'haskell-mode-hook 'haskell-prettify-enable)
+(add-hook 'haskell-interactive-mode-hook 'haskell-prettify-enable)               [(ss,_)] -> return ss
                    _         -> fail "Too many parses"
 
 parseREPL :: IO [Command]
@@ -70,6 +72,7 @@ parseReg = do
    case numToReg n of
      Just reg -> return reg
      Nothing -> undefined
+  
 
 parseSpecReg :: Parser MBSReg
 parseSpecReg = undefined
