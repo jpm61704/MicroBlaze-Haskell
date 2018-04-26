@@ -2,8 +2,6 @@
 -- |
 module IO where
 
-import           Boilerplate
-import qualified Boilerplate.W32                    as W32
 import           Control.Monad
 import           InsSet
 import           MachineState
@@ -48,14 +46,14 @@ printRegisters mb = do
 
 printRPC ∷ MicroBlaze → IO ()
 printRPC (MicroBlaze _ rpc _ _) = do
-  putStrLn $ "RPC:\t\t " ++ (show (W32.toInteger rpc)) ++ " ⇒ " ++ show rpc
+  putStrLn $ "RPC:\t\t " ++ (show rpc) 
 
 
 printRegister ∷ MicroBlaze → MBReg → IO ()
 printRegister (MicroBlaze rs _ _ _) reg = do
   let wd = readRegister reg rs
   putStr $ show reg ++ ":\t\t "
-  putStrLn $ (show (W32.toInteger wd)) ++ " ⇒ " ++ show wd
+  putStrLn $ show wd
   return ()
 
 printMicroBlaze ∷ MicroBlaze → IO ()

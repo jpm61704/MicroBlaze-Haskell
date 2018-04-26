@@ -2,16 +2,14 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module MachineState.InstructionBuffer where
 
-import           Boilerplate
-import qualified Boilerplate.W32 as W32
 import           InsSet
+import Data.Word
 
-
-data InstructionBuffer = InstructionBuffer { _decode  ∷ Maybe W32
+data InstructionBuffer = InstructionBuffer { _decode  ∷ Maybe Word32
                                            , _execute ∷ Maybe Ins }
 
 
-type Address = W32
+type Address = Word32
 
 emptyInstructionBuffer :: InstructionBuffer
 emptyInstructionBuffer = InstructionBuffer  Nothing Nothing

@@ -5,7 +5,7 @@ Description : Decoding of well-formed instructions
 -}
 
 
-module Decode( decode
+module Decode( --decode
              ) where
 
 import           Boilerplate
@@ -26,142 +26,142 @@ data OpType = TypeA (MBReg → MBReg → MBReg → Ins)
             | Sext (MBReg → MBReg → Ins)
 
 
-decode ∷ W32 → Ins
-decode wd = case (decode' op extD extA imm) of
-              TypeA ins                    → ins rD rA rB
-              TypeB ins                    → ins rD rA imm
-              BranchA ins                  → ins rA rB zeroW11
-              BranchB ins                  → ins rA imm
-              UnconditionalBranchA ins     → ins rB
-              UnconditionalBranchLinkA ins → ins rD rB
-              UnconditionalBranchB ins     → ins imm
-              UnconditionalBranchLinkB ins → ins rD imm
-              Immed ins                    → ins imm
-              MFS ins                      → ins rD spr
-              MTS ins                      → ins spr rA
-              Sext ins                     → ins rD rA
-  where raw    = format wd
-        rD     = decodeRegister $ _dest raw
-        rA     = decodeRegister $ _srcA raw
-        rB     = decodeRegister $ regB raw
-        op     = _opcode raw
-        extD   = _dest raw
-        extA   = _srcA raw
-        imm    = _srcB raw
-        spr    = case end raw of
-                   C → RPC
-                   S → MSR
+-- decode ∷ W32 → Ins
+-- decode wd = case (decode' op extD extA imm) of
+--               TypeA ins                    → ins rD rA rB
+--               TypeB ins                    → ins rD rA imm
+--               BranchA ins                  → ins rA rB zeroW11
+--               BranchB ins                  → ins rA imm
+--               UnconditionalBranchA ins     → ins rB
+--               UnconditionalBranchLinkA ins → ins rD rB
+--               UnconditionalBranchB ins     → ins imm
+--               UnconditionalBranchLinkB ins → ins rD imm
+--               Immed ins                    → ins imm
+--               MFS ins                      → ins rD spr
+--               MTS ins                      → ins spr rA
+--               Sext ins                     → ins rD rA
+--   where raw    = format wd
+--         rD     = decodeRegister $ _dest raw
+--         rA     = decodeRegister $ _srcA raw
+--         rB     = decodeRegister $ regB raw
+--         op     = _opcode raw
+--         extD   = _dest raw
+--         extA   = _srcA raw
+--         imm    = _srcB raw
+--         spr    = case end raw of
+--                    C → RPC
+--                    S → MSR
 
 
 
-decode' ∷ W6 → W5 → W5 → W16  → OpType
-decode' op extD extA extB = case op of
-  (W6 C C C C C C) → TypeA Add
-  (W6 C C C C S C) → TypeA Addc
-  (W6 C C C S C C) → TypeA Addk
-  (W6 C C C S S C) → TypeA Addkc
-  (W6 C C S C C C) → TypeB Addi
-  (W6 C C S C S C) → TypeB Addic
-  (W6 C C S S C C) → TypeB Addik
-  (W6 C C S S S C) → TypeB Addikc
-  (W6 S C C C C S) → TypeA And
-  (W6 S C S C C S) → TypeB Andi
-  (W6 S C C C S S) → TypeA Andn
-  (W6 S C S C S S) → TypeB Andni
-  (W6 S C C S S S) → BranchA $ case extD of
-                       (W5 S C C C C) → Beqd
-                       (W5 C C C C C) → Beq
-                       (W5 C C S C S) → Bge
-                       (W5 S C S C S) → Bged
-                       (W5 C C S C C) → Bgt
-                       (W5 S C S C C) → Bgtd
-                       (W5 C C C S S) → Ble
-                       (W5 S C C S S) → Bled
-                       (W5 C C C S C) → Blt
-                       (W5 S C C S C) → Bltd
-                       (W5 C C C C S) → Bne
-                       (W5 S C C C S) → Bned
--- continue on unconditional branch
-  (W6 S C S S S S) → BranchB $ case extD of
-                       (W5 S C C C C) → Beqid
-                       (W5 C C C C C) → Beqi
-                       (W5 C C S C S) → Bgei
-                       (W5 S C S C S) → Bgeid
-                       (W5 C C S C C) → Bgti
-                       (W5 S C S C C) → Bgtid
-                       (W5 C C C S S) → Blei
-                       (W5 S C C S S) → Bleid
-                       (W5 C C C S C) → Blti
-                       (W5 S C C S C) → Bltid
-                       (W5 C C C C S) → Bnei
-                       (W5 S C C C S) → Bneid
-  (W6 S C C S S C) → case extA of
-                       (W5 C C C C C) → UnconditionalBranchA Br
-                       (W5 C S C C C) → UnconditionalBranchA Bra
-                       (W5 S C C C C) → UnconditionalBranchA Brd
-                       (W5 S S C C C) → UnconditionalBranchA Brad
-                       (W5 S C S C C) → UnconditionalBranchLinkA Brld
-                       (W5 S S S C C) → UnconditionalBranchLinkA Brald
-                       (W5 C S S C C) → UnconditionalBranchLinkA Brk
-  (W6 S C S S S C) → case extA of
-                       (W5 C C C C C) → UnconditionalBranchB Bri
-                       (W5 C S C C C) → UnconditionalBranchB Brai
-                       (W5 S C C C C) → UnconditionalBranchB Brid
-                       (W5 S S C C C) → UnconditionalBranchB Braid
-                       (W5 S C S C C) → UnconditionalBranchLinkB Brlid
-                       (W5 S S S C C) → UnconditionalBranchLinkB Bralid
-                       (W5 C S S C C) → UnconditionalBranchLinkB Brki
-  (W6 C S C C C S) → TypeA $ case back11 extB of
-                               (W11 C C _ _ _ _ _ _ _ _ _) → Bsrl
-                               (W11 C S _ _ _ _ _ _ _ _ _) → Bsra
-                               (W11 S C _ _ _ _ _ _ _ _ _) → Bsll
-  (W6 C S S C C S) → error "barrel shift immediate not supported"
-  (W6 C C C S C S) → TypeA $ case back11 extB of
-                               (W11 C C C C C C C C C C C) → Rsubk
-                               (W11 _ _ _ _ _ _ _ _ _ C _) → Cmp
-                               (W11 _ _ _ _ _ _ _ _ _ S _) → Cmpu
-  (W6 C S S C S S) → error "FSL intergace not supported"
-  (W6 C S C C S C) → error "Hardware division not yet supported"
-  (W6 S C S S C C) → Immed Imm
-  (W6 S S C C C C) → TypeA Lbu
-  (W6 S S S C C C) → TypeB Lbui
-  (W6 S S C C C S) → TypeA Lhu
-  (W6 S S S C C S) → TypeB Lhui
-  (W6 S S C C S C) → TypeA Lw
-  (W6 S S S C S C) → TypeB Lwi
-  (W6 S C C S C S) → case (extD, extA) of
-                       (W5 C C C C C, _) → MTS Mts
-                       (_, W5 C C C C C) → MFS Mfs
-  (W6 C S C C C C) → TypeA Mul
-  (W6 C S S C C C) → TypeB Muli
-  (W6 S C C C C C) → TypeA Or
-  (W6 S C S C C C) → TypeB Ori
-  (W6 C C C C C S) → TypeA Rsub
-  (W6 C C C C S S) → TypeA Rsubc
-  (W6 C C C S S S) → TypeA Rsubkc
-  (W6 C C S C C S) → TypeB Rsubi
-  (W6 C C S C S S) → TypeB Rsubic
-  (W6 C C S S C S) → TypeB Rsubik
-  (W6 C C S S S S) → TypeB Rsubikc
-  (W6 S C S S C S) → case extD of
-                       (W5 S C C C S) → BranchB Rtid
-                       (W5 S C C C C) → BranchB Rtsd
-                       (W5 S C C S C) → BranchB Rtbd
-  (W6 S S C S C C) → TypeA Sb
-  (W6 S S S S C C) → TypeB Sbi
-  (W6 S C C S C C) → case extB of
-                       (W16 C C C C C C C C C S S C C C C S) → Sext Sext16
-                       (W16 C C C C C C C C C S S C C C C C) → Sext Sext8
-                       (W16 C C C C C C C C C C C C C C C S) → Sext Sra
-                       (W16 C C C C C C C C C C S C C C C S) → Sext Src
-                       (W16 C C C C C C C C C S C C C C C S) → Sext Srl
-                       (W16 _ _ _ _ _ C C C C S S C C S C C) → error "Cache operations not supported"
-  (W6 S S C S C S) → TypeA Sh
-  (W6 S S S S C S) → TypeB Shi
-  (W6 S S C S S C) → TypeA Sw
-  (W6 S S S S S C) → TypeB Swi
-  (W6 S C C C S C) → TypeA Xor
-  (W6 S C S C S C) → TypeB Xori
+-- decode' ∷ W6 → W5 → W5 → W16  → OpType
+-- decode' op extD extA extB = case op of
+--   (W6 C C C C C C) → TypeA Add
+--   (W6 C C C C S C) → TypeA Addc
+--   (W6 C C C S C C) → TypeA Addk
+--   (W6 C C C S S C) → TypeA Addkc
+--   (W6 C C S C C C) → TypeB Addi
+--   (W6 C C S C S C) → TypeB Addic
+--   (W6 C C S S C C) → TypeB Addik
+--   (W6 C C S S S C) → TypeB Addikc
+--   (W6 S C C C C S) → TypeA And
+--   (W6 S C S C C S) → TypeB Andi
+--   (W6 S C C C S S) → TypeA Andn
+--   (W6 S C S C S S) → TypeB Andni
+--   (W6 S C C S S S) → BranchA $ case extD of
+--                        (W5 S C C C C) → Beqd
+--                        (W5 C C C C C) → Beq
+--                        (W5 C C S C S) → Bge
+--                        (W5 S C S C S) → Bged
+--                        (W5 C C S C C) → Bgt
+--                        (W5 S C S C C) → Bgtd
+--                        (W5 C C C S S) → Ble
+--                        (W5 S C C S S) → Bled
+--                        (W5 C C C S C) → Blt
+--                        (W5 S C C S C) → Bltd
+--                        (W5 C C C C S) → Bne
+--                        (W5 S C C C S) → Bned
+-- -- continue on unconditional branch
+--   (W6 S C S S S S) → BranchB $ case extD of
+--                        (W5 S C C C C) → Beqid
+--                        (W5 C C C C C) → Beqi
+--                        (W5 C C S C S) → Bgei
+--                        (W5 S C S C S) → Bgeid
+--                        (W5 C C S C C) → Bgti
+--                        (W5 S C S C C) → Bgtid
+--                        (W5 C C C S S) → Blei
+--                        (W5 S C C S S) → Bleid
+--                        (W5 C C C S C) → Blti
+--                        (W5 S C C S C) → Bltid
+--                        (W5 C C C C S) → Bnei
+--                        (W5 S C C C S) → Bneid
+--   (W6 S C C S S C) → case extA of
+--                        (W5 C C C C C) → UnconditionalBranchA Br
+--                        (W5 C S C C C) → UnconditionalBranchA Bra
+--                        (W5 S C C C C) → UnconditionalBranchA Brd
+--                        (W5 S S C C C) → UnconditionalBranchA Brad
+--                        (W5 S C S C C) → UnconditionalBranchLinkA Brld
+--                        (W5 S S S C C) → UnconditionalBranchLinkA Brald
+--                        (W5 C S S C C) → UnconditionalBranchLinkA Brk
+--   (W6 S C S S S C) → case extA of
+--                        (W5 C C C C C) → UnconditionalBranchB Bri
+--                        (W5 C S C C C) → UnconditionalBranchB Brai
+--                        (W5 S C C C C) → UnconditionalBranchB Brid
+--                        (W5 S S C C C) → UnconditionalBranchB Braid
+--                        (W5 S C S C C) → UnconditionalBranchLinkB Brlid
+--                        (W5 S S S C C) → UnconditionalBranchLinkB Bralid
+--                        (W5 C S S C C) → UnconditionalBranchLinkB Brki
+--   (W6 C S C C C S) → TypeA $ case back11 extB of
+--                                (W11 C C _ _ _ _ _ _ _ _ _) → Bsrl
+--                                (W11 C S _ _ _ _ _ _ _ _ _) → Bsra
+--                                (W11 S C _ _ _ _ _ _ _ _ _) → Bsll
+--   (W6 C S S C C S) → error "barrel shift immediate not supported"
+--   (W6 C C C S C S) → TypeA $ case back11 extB of
+--                                (W11 C C C C C C C C C C C) → Rsubk
+--                                (W11 _ _ _ _ _ _ _ _ _ C _) → Cmp
+--                                (W11 _ _ _ _ _ _ _ _ _ S _) → Cmpu
+--   (W6 C S S C S S) → error "FSL intergace not supported"
+--   (W6 C S C C S C) → error "Hardware division not yet supported"
+--   (W6 S C S S C C) → Immed Imm
+--   (W6 S S C C C C) → TypeA Lbu
+--   (W6 S S S C C C) → TypeB Lbui
+--   (W6 S S C C C S) → TypeA Lhu
+--   (W6 S S S C C S) → TypeB Lhui
+--   (W6 S S C C S C) → TypeA Lw
+--   (W6 S S S C S C) → TypeB Lwi
+--   (W6 S C C S C S) → case (extD, extA) of
+--                        (W5 C C C C C, _) → MTS Mts
+--                        (_, W5 C C C C C) → MFS Mfs
+--   (W6 C S C C C C) → TypeA Mul
+--   (W6 C S S C C C) → TypeB Muli
+--   (W6 S C C C C C) → TypeA Or
+--   (W6 S C S C C C) → TypeB Ori
+--   (W6 C C C C C S) → TypeA Rsub
+--   (W6 C C C C S S) → TypeA Rsubc
+--   (W6 C C C S S S) → TypeA Rsubkc
+--   (W6 C C S C C S) → TypeB Rsubi
+--   (W6 C C S C S S) → TypeB Rsubic
+--   (W6 C C S S C S) → TypeB Rsubik
+--   (W6 C C S S S S) → TypeB Rsubikc
+--   (W6 S C S S C S) → case extD of
+--                        (W5 S C C C S) → BranchB Rtid
+--                        (W5 S C C C C) → BranchB Rtsd
+--                        (W5 S C C S C) → BranchB Rtbd
+--   (W6 S S C S C C) → TypeA Sb
+--   (W6 S S S S C C) → TypeB Sbi
+--   (W6 S C C S C C) → case extB of
+--                        (W16 C C C C C C C C C S S C C C C S) → Sext Sext16
+--                        (W16 C C C C C C C C C S S C C C C C) → Sext Sext8
+--                        (W16 C C C C C C C C C C C C C C C S) → Sext Sra
+--                        (W16 C C C C C C C C C C S C C C C S) → Sext Src
+--                        (W16 C C C C C C C C C S C C C C C S) → Sext Srl
+--                        (W16 _ _ _ _ _ C C C C S S C C S C C) → error "Cache operations not supported"
+--   (W6 S S C S C S) → TypeA Sh
+--   (W6 S S S S C S) → TypeB Shi
+--   (W6 S S C S S C) → TypeA Sw
+--   (W6 S S S S S C) → TypeB Swi
+--   (W6 S C C C S C) → TypeA Xor
+--   (W6 S C S C S C) → TypeB Xori
 
 
 

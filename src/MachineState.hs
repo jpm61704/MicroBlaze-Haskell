@@ -47,9 +47,7 @@ module MachineState(
 
 import           MachineState.InstructionBuffer
 import           MachineState.MachineStatusRegister
-
-import           Boilerplate
-import qualified Boilerplate.W32                    as W32
+import Data.Word
 import           Control.Monad.State.Lazy
 import           InsSet
 
@@ -60,11 +58,11 @@ import           InsSet
 data MicroBlaze = MicroBlaze MBRegisters RPC RMSR InstructionBuffer
 
 -- | Standard word size for MicroBlaze
-type MBWord = W32
+type MBWord = Word32
 
 -- | Creates a zero-initialized MicroBlaze controller
 newMicroBlaze :: MicroBlaze
-newMicroBlaze = MicroBlaze emptyRegisters W32.zero emptyRMSR emptyInstructionBuffer
+newMicroBlaze = MicroBlaze emptyRegisters 0 emptyRMSR emptyInstructionBuffer
 
 -- | Program Counter
 type RPC = MBWord
@@ -87,7 +85,7 @@ setRPC loc = do
 -- | Sets a specified bit on the machine status register
 setMSRBit :: (Monad m)
          => MachineStatusBit     -- ^ Machine Status Flag to set
-          → Bit                  -- ^ The value to set it to
+          → Bool                  -- ^ The value to set it to
           → StateT MicroBlaze m ()
 setMSRBit msb b = do
   (MicroBlaze rs rpc rmsr ib) <- get
@@ -96,19 +94,19 @@ setMSRBit msb b = do
   return ()
 
 -- | Gets the value of a specified MSR Bit
-getMSRBit :: (Monad m) => MachineStatusBit -> StateT MicroBlaze m Bit
+getMSRBit :: (Monad m) => MachineStatusBit -> StateT MicroBlaze m Bool
 getMSRBit msb = do
   (MicroBlaze _ _ rmsr ib) <- get
   return $ getStatus msb rmsr
 
 -- | Pulls the enture Machine Status Register as a 32-bit Word
-pullMSR ∷ (Monad m) => StateT MicroBlaze m W32
+pullMSR ∷ (Monad m) => StateT MicroBlaze m Word32
 pullMSR = do
   (MicroBlaze _ _ rmsr _) ← get
   return $ getMSRWord rmsr
 
 -- | Pushes an enture MSR as a 32-bit word
-pushMSR ∷ (Monad m) => W32 → StateT MicroBlaze m ()
+pushMSR ∷ (Monad m) => Word32 → StateT MicroBlaze m ()
 pushMSR w = do
   delay ← getMSRBit DelayEnable
   let rmsr' = setStatus DelayEnable delay (setMSRWord w)
@@ -195,7 +193,7 @@ writeRegister R31 w (MBRegisters b1 b2 b3 b4) = MBRegisters b1 b2 b3 (writeRegBl
 
 -- | read a given register
 readRegister :: MBReg -> MBRegisters -> MBWord
-readRegister R0 _                          = W32.zero
+readRegister R0 _                          = 0
 readRegister R1 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB2 b1
 readRegister R2 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB3 b1
 readRegister R3 (MBRegisters b1 b2 b3 b4)  = readRegBlock RB4 b1
@@ -245,7 +243,7 @@ setRegister r w = do
 
 
 emptyRB :: RegBlock
-emptyRB = RB W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero W32.zero
+emptyRB = RB 0 0 0 0 0 0 0 0
 
 -- | zero-initialized register bank
 emptyRegisters :: MBRegisters
@@ -254,49 +252,49 @@ emptyRegisters = MBRegisters emptyRB emptyRB emptyRB emptyRB
 -- | loads a 32-bit word from memory
 --
 -- __NOT YET IMPLEMENTED__
-loadWord ∷ (Monad m) => W32 → StateT MicroBlaze m W32
+loadWord ∷ (Monad m) => Word32 → StateT MicroBlaze m Word32
 loadWord = undefined
 
 -- | loads a 16-bit half-word from memory
 --
 -- __NOT YET IMPLEMENTED__
-loadHalfWord ∷ (Monad m) => W32 → StateT MicroBlaze m W16
+loadHalfWord ∷ (Monad m) => Word32 → StateT MicroBlaze m Word16
 loadHalfWord = undefined
 
 -- | loads a byte from memory
 --
 -- __NOT YET IMPLEMENTED__
-loadByte ∷ (Monad m) => W32 → StateT MicroBlaze m W8
+loadByte ∷ (Monad m) => Word32 → StateT MicroBlaze m Word8
 loadByte = undefined
 
 
 -- | stores a 32-bit word in memory
 --
 -- __NOT YET IMPLEMENTED__
-storeWord ∷ (Monad m) => W32 → W32 →  W32 → StateT MicroBlaze m ()
+storeWord ∷ (Monad m) => Word32 → Word32 →  Word32 → StateT MicroBlaze m ()
 storeWord = undefined
 
 -- | stores a 16-bit half-word in memory
 --
 -- __NOT YET IMPLEMENTED__
-storeHalfWord ∷ (Monad m) => W16 → W32 → W32 → StateT MicroBlaze m ()
+storeHalfWord ∷ (Monad m) => Word16 → Word32 → Word32 → StateT MicroBlaze m ()
 storeHalfWord = undefined
 
 -- | stores a 8-bit byte in memory
 --
 -- __NOT YET IMPLEMENTED__
-storeByte ∷ (Monad m) => W8 → W32 → W32 → StateT MicroBlaze m ()
+storeByte ∷ (Monad m) => Word8 → Word32 → Word32 → StateT MicroBlaze m ()
 storeByte = undefined
 
 
 
 
-fetch ∷ Address → State MicroBlaze W32
+fetch ∷ Address → State MicroBlaze Word32
 fetch = undefined
 
 
 
-pullDecode ∷ State MicroBlaze (Maybe W32)
+pullDecode ∷ State MicroBlaze (Maybe Word32)
 pullDecode = do
   (MicroBlaze _ _ _ (InstructionBuffer d _)) ← get
   return d

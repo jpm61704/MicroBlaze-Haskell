@@ -5,9 +5,8 @@ Description : Data definitions for the MicroBlaze Instruction Set
 module InsSet where
 
 import           Boilerplate
-import           Boilerplate.Bit as B
-import           Boilerplate.W32 as W32
 import           Data.Int
+import Data.Word
 
 -- | Possible data sizes
 data MBSize = ByteSize
@@ -69,58 +68,58 @@ data Ins  = Add MBReg MBReg MBReg
           | Addc MBReg MBReg MBReg
           | Addk MBReg MBReg MBReg
           | Addkc MBReg MBReg MBReg
-          | Addi MBReg MBReg W16
-          | Addic MBReg MBReg W16
-          | Addik MBReg MBReg W16
-          | Addikc MBReg MBReg W16
+          | Addi MBReg MBReg Word16
+          | Addic MBReg MBReg Word16
+          | Addik MBReg MBReg Word16
+          | Addikc MBReg MBReg Word16
           | And MBReg MBReg MBReg
-          | Andi MBReg MBReg W16
+          | Andi MBReg MBReg Word16
           | Andn MBReg MBReg MBReg
-          | Andni MBReg MBReg W16
+          | Andni MBReg MBReg Word16
           | Beq MBReg MBReg W11
           | Beqd MBReg MBReg W11
-          | Beqi MBReg W16
-          | Beqid MBReg W16
+          | Beqi MBReg Word16
+          | Beqid MBReg Word16
           | Bge MBReg MBReg W11
           | Bged MBReg MBReg W11
-          | Bgei MBReg W16
-          | Bgeid MBReg W16
+          | Bgei MBReg Word16
+          | Bgeid MBReg Word16
           | Bgt MBReg MBReg W11
           | Bgtd MBReg MBReg W11
-          | Bgti MBReg W16
-          | Bgtid MBReg W16
+          | Bgti MBReg Word16
+          | Bgtid MBReg Word16
           | Ble MBReg MBReg W11
           | Bled MBReg MBReg W11
-          | Blei MBReg W16
-          | Bleid MBReg W16
+          | Blei MBReg Word16
+          | Bleid MBReg Word16
           | Blt MBReg MBReg W11
           | Bltd MBReg MBReg W11
-          | Blti MBReg W16
-          | Bltid MBReg W16
+          | Blti MBReg Word16
+          | Bltid MBReg Word16
           | Bne MBReg MBReg W11
           | Bned MBReg MBReg W11
-          | Bnei MBReg W16
-          | Bneid MBReg W16
+          | Bnei MBReg Word16
+          | Bneid MBReg Word16
           | Br MBReg
           | Bra MBReg
           | Brd MBReg
           | Brad MBReg
           | Brld MBReg MBReg
           | Brald MBReg MBReg
-          | Bri W16
-          | Brai W16
-          | Brid W16
-          | Braid W16
-          | Brlid MBReg W16
-          | Bralid MBReg W16
+          | Bri Word16
+          | Brai Word16
+          | Brid Word16
+          | Braid Word16
+          | Brlid MBReg Word16
+          | Bralid MBReg Word16
           | Brk MBReg MBReg
-          | Brki MBReg W16
+          | Brki MBReg Word16
           | Bsrl MBReg MBReg MBReg
           | Bsra MBReg MBReg MBReg
           | Bsll MBReg MBReg MBReg
-          | Bsrli MBReg MBReg W16
-          | Bsrai MBReg MBReg W16
-          | Bslli MBReg MBReg W16
+          | Bsrli MBReg MBReg Word16
+          | Bsrai MBReg MBReg Word16
+          | Bslli MBReg MBReg Word16
           | Cmp MBReg MBReg MBReg
           | Cmpu MBReg MBReg MBReg
 {-        | Fadd MBReg MBReg MBReg
@@ -150,23 +149,23 @@ data Ins  = Add MBReg MBReg MBReg
 --        | Getd MBReg Int
           | Idiv MBReg MBReg MBReg
           | Idivu MBReg MBReg MBReg
-          | Imm W16
+          | Imm Word16
           | Lbu MBReg MBReg MBReg
-          | Lbui MBReg MBReg W16
+          | Lbui MBReg MBReg Word16
           | Lhu MBReg MBReg MBReg
-          | Lhui MBReg MBReg W16
+          | Lhui MBReg MBReg Word16
           | Lw MBReg MBReg MBReg
-          | Lwi MBReg MBReg W16
+          | Lwi MBReg MBReg Word16
           | Mfs MBReg MBSReg
---        | Msrclr MBReg W16
---        | Msrset MBReg W16
+--        | Msrclr MBReg Word16
+--        | Msrset MBReg Word16
           | Mts MBSReg MBReg
           | Mul MBReg MBReg MBReg
           | Mulhu MBReg MBReg MBReg
           | Mulhsu MBReg MBReg MBReg
-          | Muli MBReg MBReg W16
+          | Muli MBReg MBReg Word16
           | Or MBReg MBReg MBReg
-          | Ori MBReg MBReg W16
+          | Ori MBReg MBReg Word16
           | Pcmpbf MBReg MBReg MBReg
           | Pcmpne MBReg MBReg MBReg
           -- put to FSL interface:
@@ -178,27 +177,27 @@ data Ins  = Add MBReg MBReg MBReg
           | Rsubc MBReg MBReg MBReg
           | Rsubk MBReg MBReg MBReg
           | Rsubkc MBReg MBReg MBReg
-          | Rsubi MBReg MBReg W16
-          | Rsubic MBReg MBReg W16
-          | Rsubik MBReg MBReg W16
-          | Rsubikc MBReg MBReg W16
-          | Rtbd MBReg W16
-          | Rtid MBReg W16
-          | Rted MBReg W16
-          | Rtsd MBReg W16
+          | Rsubi MBReg MBReg Word16
+          | Rsubic MBReg MBReg Word16
+          | Rsubik MBReg MBReg Word16
+          | Rsubikc MBReg MBReg Word16
+          | Rtbd MBReg Word16
+          | Rtid MBReg Word16
+          | Rted MBReg Word16
+          | Rtsd MBReg Word16
           | Sb MBReg MBReg MBReg
-          | Sbi MBReg MBReg W16
+          | Sbi MBReg MBReg Word16
           | Sext8 MBReg MBReg
           | Sext16 MBReg MBReg
           | Sh MBReg MBReg MBReg
-          | Shi MBReg MBReg W16
+          | Shi MBReg MBReg Word16
           | Sra MBReg MBReg
           | Src MBReg MBReg
           | Srl MBReg MBReg
           | Sw MBReg MBReg MBReg
-          | Swi MBReg MBReg W16
+          | Swi MBReg MBReg Word16
           | Wdc MBReg MBReg
           | Wic MBReg MBReg
           | Xor MBReg MBReg MBReg
-          | Xori MBReg MBReg W16
+          | Xori MBReg MBReg Word16
           deriving (Show)

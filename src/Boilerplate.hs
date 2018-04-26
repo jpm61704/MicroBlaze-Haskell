@@ -6,6 +6,8 @@ Description : Contains definitions of useful fixed sized data types
 module Boilerplate where
 
 import qualified Prelude as P
+import Data.Word
+import Data.Bits
 
 -- * Bit Data
 
@@ -48,9 +50,17 @@ data W6  =  W6 Bit Bit Bit Bit Bit Bit deriving P.Show
 -- | 11-bit data
 data W11 = W11 Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit deriving P.Show
 
--- | 26-bit data
-data W26 = W26 Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit
-               Bit Bit Bit Bit Bit Bit Bit Bit Bit Bit
-               Bit Bit Bit Bit Bit Bit deriving P.Show
+maybeSignExtend :: (P.Integral a, P.Integral b, FiniteBits a, FiniteBits b)
+                => a
+                -> P.Maybe b
+maybeSignExtend x = do
+  x' <- toIntegralSized x
+  let origional_size = (finiteBitSize x)
+      msb = testBit x (origional_size P.- 1)
+  P.return P.$ if msb
+             then P.foldr (\i n -> setBit n i) x' [origional_size..(finiteBitSize x')]
+             else x' 
 
-
+showFiniteBits :: (FiniteBits a) => a -> P.String
+showFiniteBits x = P.foldr (visualTestBit) "" P.$ P.reverse [0..((finiteBitSize x) P.- 1)]
+  where visualTestBit = \i str -> if testBit x i then "1" P.++ str else "0" P.++ str

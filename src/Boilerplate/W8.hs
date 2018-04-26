@@ -81,6 +81,12 @@ leastSignificantBit (W8 _ _ _ _ _ _ _ b) = b
 
 -- * Arithmetic
 
+-- addWithCarry ∷ (Num a) => a → a → Bool → (Bool, a)
+-- addWithCarry x y ci = (carry_out, sum)
+--   where sum = x + y + carry_in
+--         carry_out = sum < x || sum < y
+--         carry_in  = if ci then 1 else 0
+  
 -- | addition with carry
 add ∷ W8 → W8 → Bit → (Bit, W8)
 add (W8 b0 b1 b2 b3 b4 b5 b6 b7) (W8 c0 c1 c2 c3 c4 c5 c6 c7) ci = (co0,W8 d0 d1 d2 d3 d4 d5 d6 d7)
