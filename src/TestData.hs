@@ -13,13 +13,13 @@ import           InsSet
 import           Interpreter
 import           MachineState
 
--- | An addition test
-quickTest ∷ State MicroBlaze W32
-quickTest = do
-  setRegister R1 (W32 W8.zero W8.zero W8.zero (W8 C C C C C C C S))
-  setRegister R2 (W32 W8.zero W8.zero W8.zero (W8 C C C C C C C S))
-  exec (Add R1 R2 R3)
-  x ← getRegister R3
-  return x
+-- -- | An addition test
+-- quickTest ∷ State MicroBlaze W32
+-- quickTest = do
+--   setRegister R1 (W32 W8.zero W8.zero W8.zero (W8 C C C C C C C S))
+--   setRegister R2 (W32 W8.zero W8.zero W8.zero (W8 C C C C C C C S))
+--   exec (Add R1 R2 R3)
+--   x ← getRegister R3
+--   return x
 
 

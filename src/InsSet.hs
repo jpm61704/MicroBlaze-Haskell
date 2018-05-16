@@ -76,28 +76,28 @@ data Ins  = Add MBReg MBReg MBReg
           | Andi MBReg MBReg Word16
           | Andn MBReg MBReg MBReg
           | Andni MBReg MBReg Word16
-          | Beq MBReg MBReg W11
-          | Beqd MBReg MBReg W11
+          | Beq MBReg MBReg 
+          | Beqd MBReg MBReg 
           | Beqi MBReg Word16
           | Beqid MBReg Word16
-          | Bge MBReg MBReg W11
-          | Bged MBReg MBReg W11
+          | Bge MBReg MBReg 
+          | Bged MBReg MBReg 
           | Bgei MBReg Word16
           | Bgeid MBReg Word16
-          | Bgt MBReg MBReg W11
-          | Bgtd MBReg MBReg W11
+          | Bgt MBReg MBReg 
+          | Bgtd MBReg MBReg 
           | Bgti MBReg Word16
           | Bgtid MBReg Word16
-          | Ble MBReg MBReg W11
-          | Bled MBReg MBReg W11
+          | Ble MBReg MBReg 
+          | Bled MBReg MBReg 
           | Blei MBReg Word16
           | Bleid MBReg Word16
-          | Blt MBReg MBReg W11
-          | Bltd MBReg MBReg W11
+          | Blt MBReg MBReg 
+          | Bltd MBReg MBReg 
           | Blti MBReg Word16
           | Bltid MBReg Word16
-          | Bne MBReg MBReg W11
-          | Bned MBReg MBReg W11
+          | Bne MBReg MBReg 
+          | Bned MBReg MBReg 
           | Bnei MBReg Word16
           | Bneid MBReg Word16
           | Br MBReg

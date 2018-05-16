@@ -59,28 +59,28 @@ exec (And rd ra rb)     = execTypeA (.&.) rd ra rb
 exec (Andi rd ra imm)   = execTypeB (.&.) rd ra imm
 exec (Andn rd ra rb)    = execTypeA (\a b→ a .&. (complement b)) rd ra rb
 exec (Andni rd ra imm)  = execTypeB (\a b→ a .&. (complement b)) rd ra imm
-exec (Beq ra rb _)      = branch (TypeA ra rb) ((==) 0)
-exec (Beqd ra rb _)     = delay >> branch (TypeA ra rb ) ((==) 0)
+exec (Beq ra rb )      = branch (TypeA ra rb) ((==) 0)
+exec (Beqd ra rb )     = delay >> branch (TypeA ra rb ) ((==) 0)
 exec (Beqi ra imm)      = branch (TypeB ra imm) ((==) 0)
 exec (Beqid ra imm)     = delay >> branch (TypeB ra imm) ((==) 0)
-exec (Bge ra rb _)      = branch (TypeA ra rb) (\x -> testBit x 31)
-exec (Bged ra rb _)     = delay >> branch (TypeA ra rb) isPositive
+exec (Bge ra rb )      = branch (TypeA ra rb) (\x -> testBit x 31)
+exec (Bged ra rb )     = delay >> branch (TypeA ra rb) isPositive
 exec (Bgei ra imm)      = branch (TypeB ra imm) isPositive
 exec (Bgeid ra imm)     = delay >> branch (TypeB ra imm) isPositive
-exec (Bgt ra rb _)      = branch (TypeA ra rb) (\x -> isPositive x && x /= 0)
-exec (Bgtd ra rb _)     = delay >> branch (TypeA ra rb) (\x -> isPositive x && x /= 0)
+exec (Bgt ra rb )      = branch (TypeA ra rb) (\x -> isPositive x && x /= 0)
+exec (Bgtd ra rb )     = delay >> branch (TypeA ra rb) (\x -> isPositive x && x /= 0)
 exec (Bgti ra imm)      = branch (TypeB ra imm) (\x -> isPositive x && x /= 0)
 exec (Bgtid ra imm)     = delay >> branch (TypeB ra imm) (\x -> isPositive x && x /= 0)
-exec (Ble ra rb _)      = branch (TypeA ra rb) lessThanOrEqualToZero
-exec (Bled ra rb _)     = delay >> branch (TypeA ra rb) lessThanOrEqualToZero
+exec (Ble ra rb )      = branch (TypeA ra rb) lessThanOrEqualToZero
+exec (Bled ra rb )     = delay >> branch (TypeA ra rb) lessThanOrEqualToZero
 exec (Blei ra imm)      = branch (TypeB ra imm) lessThanOrEqualToZero
 exec (Bleid ra imm)     = delay >> branch (TypeB ra imm) lessThanOrEqualToZero
-exec (Blt ra rb _)      = branch (TypeA ra rb) isNegative
-exec (Bltd ra rb _)     = delay >> branch (TypeA ra rb) isNegative
+exec (Blt ra rb )      = branch (TypeA ra rb) isNegative
+exec (Bltd ra rb )     = delay >> branch (TypeA ra rb) isNegative
 exec (Blti ra imm)      = branch (TypeB ra imm) isNegative
 exec (Bltid ra imm)     = delay >> branch (TypeB ra imm) isNegative
-exec (Bne ra rb _)      = branch (TypeA ra rb) (\x → not (x == 0))
-exec (Bned ra rb _)     = delay >> branch (TypeA ra rb) (\x → not (x == 0))
+exec (Bne ra rb )      = branch (TypeA ra rb) (\x → not (x == 0))
+exec (Bned ra rb )     = delay >> branch (TypeA ra rb) (\x → not (x == 0))
 exec (Bnei ra imm)      = branch (TypeB ra imm) (\x → not (x == 0))
 exec (Bneid ra imm)     = delay >> branch (TypeB ra imm) (\x → not (x == 0))
 exec (Br rb)            = branch (TypeA undefined rb) (\x → True)

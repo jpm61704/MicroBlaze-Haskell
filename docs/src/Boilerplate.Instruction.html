@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Boilerplate</span><span class="hs-operator">.</span><span class="hs-identifier">Instruction</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Word</span><span>
+</span><a name="line-4"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-keyword">type</span><span> </span><a name="Name"><a href="Boilerplate.Instruction.html#Name"><span class="hs-identifier">Name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">String</span><span>
+</span><a name="line-7"></a><span class="hs-keyword">type</span><span> </span><a name="Size"><a href="Boilerplate.Instruction.html#Size"><span class="hs-identifier">Size</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Word</span><span>
+</span><a name="line-8"></a><span>
+</span><a name="line-9"></a><span class="hs-comment">-- * Definition of Arguments Type</span><span>
+</span><a name="line-10"></a><span>
+</span><a name="line-11"></a><span class="hs-comment">-- | This type is used for defining arguments and their sizes</span><span>
+</span><a name="line-12"></a><span class="hs-comment">--   for use as instruction codes</span><span>
+</span><a name="line-13"></a><span class="hs-keyword">data</span><span> </span><a name="Arguments"><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier">Arguments</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="Register"><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier">Register</span></a></a><span> </span><a href="Boilerplate.Instruction.html#Name"><span class="hs-identifier hs-type">Name</span></a><span> </span><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier hs-type">Arguments</span></a><span>
+</span><a name="line-14"></a><span>               </span><span class="hs-glyph">|</span><span> </span><a name="Immediate"><a href="Boilerplate.Instruction.html#Immediate"><span class="hs-identifier">Immediate</span></a></a><span> </span><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier hs-type">Arguments</span></a><span>
+</span><a name="line-15"></a><span>               </span><span class="hs-glyph">|</span><span> </span><a name="END"><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier">END</span></a></a><span>
+</span><a name="line-16"></a><span>               </span><span class="hs-keyword">deriving</span><span class="hs-special">(</span><span class="hs-identifier hs-type">Show</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Read</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier hs-type">Monoid</span><span> </span><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier hs-type">Arguments</span></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-19"></a><span>  </span><a name="local-3458764513820541442"><span class="hs-identifier">mempty</span></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span>
+</span><a name="line-20"></a><span>  </span><a name="local-3458764513820541443"><span class="hs-identifier">mappend</span></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier hs-type">Semigroup</span><span> </span><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier hs-type">Arguments</span></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">(</span><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier hs-var">Register</span></a><span> </span><a name="local-6989586621679047365"><a href="#local-6989586621679047365"><span class="hs-identifier">n</span></a></a><span> </span><a name="local-6989586621679047366"><a href="#local-6989586621679047366"><span class="hs-identifier">xs</span></a></a><span class="hs-special">)</span><span> </span><a name="local-3458764513820541441"><span class="hs-operator">&lt;&gt;</span></a><span> </span><a name="local-6989586621679047367"><a href="#local-6989586621679047367"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier hs-var">Register</span></a><span> </span><a href="#local-6989586621679047365"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679047366"><span class="hs-identifier hs-var">xs</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="#local-6989586621679047367"><span class="hs-identifier hs-var">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">(</span><a href="Boilerplate.Instruction.html#Immediate"><span class="hs-identifier hs-var">Immediate</span></a><span> </span><a name="local-6989586621679047368"><a href="#local-6989586621679047368"><span class="hs-identifier">xs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-operator">&lt;&gt;</span><span> </span><a name="local-6989586621679047369"><a href="#local-6989586621679047369"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Immediate"><span class="hs-identifier hs-var">Immediate</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679047368"><span class="hs-identifier hs-var">xs</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="#local-6989586621679047369"><span class="hs-identifier hs-var">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span>  </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span> </span><span class="hs-operator">&lt;&gt;</span><span> </span><a name="local-6989586621679047370"><a href="#local-6989586621679047370"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679047370"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-keyword">data</span><span> </span><a name="InstructionType"><a href="Boilerplate.Instruction.html#InstructionType"><span class="hs-identifier">InstructionType</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="InsType"><a href="Boilerplate.Instruction.html#InsType"><span class="hs-identifier">InsType</span></a></a><span> </span><a href="Boilerplate.Instruction.html#Arguments"><span class="hs-identifier hs-type">Arguments</span></a><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-identifier">typeA</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Boilerplate.Instruction.html#InstructionType"><span class="hs-identifier hs-type">InstructionType</span></a><span>
+</span><a name="line-31"></a><a name="typeA"><a href="Boilerplate.Instruction.html#typeA"><span class="hs-identifier">typeA</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#InsType"><span class="hs-identifier hs-var">InsType</span></a><span> </span><span class="hs-special">(</span><a href="Boilerplate.Instruction.html#rd"><span class="hs-identifier hs-var">rd</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="Boilerplate.Instruction.html#ra"><span class="hs-identifier hs-var">ra</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="Boilerplate.Instruction.html#rb"><span class="hs-identifier hs-var">rb</span></a><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-identifier">typeB</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Boilerplate.Instruction.html#InstructionType"><span class="hs-identifier hs-type">InstructionType</span></a><span>
+</span><a name="line-34"></a><a name="typeB"><a href="Boilerplate.Instruction.html#typeB"><span class="hs-identifier">typeB</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#InsType"><span class="hs-identifier hs-var">InsType</span></a><span> </span><span class="hs-special">(</span><a href="Boilerplate.Instruction.html#rd"><span class="hs-identifier hs-var">rd</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="Boilerplate.Instruction.html#ra"><span class="hs-identifier hs-var">ra</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="Boilerplate.Instruction.html#imm"><span class="hs-identifier hs-var">imm</span></a><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span>
+</span><a name="line-36"></a><a name="imm"><a href="Boilerplate.Instruction.html#imm"><span class="hs-identifier">imm</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Immediate"><span class="hs-identifier hs-var">Immediate</span></a><span> </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span>
+</span><a name="line-37"></a><span>
+</span><a name="line-38"></a><a name="ra"><a href="Boilerplate.Instruction.html#ra"><span class="hs-identifier">ra</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier hs-var">Register</span></a><span> </span><span class="hs-string">&quot;ra&quot;</span><span> </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span>
+</span><a name="line-39"></a><span>
+</span><a name="line-40"></a><a name="rb"><a href="Boilerplate.Instruction.html#rb"><span class="hs-identifier">rb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier hs-var">Register</span></a><span> </span><span class="hs-string">&quot;rb&quot;</span><span> </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><a name="rd"><a href="Boilerplate.Instruction.html#rd"><span class="hs-identifier">rd</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Boilerplate.Instruction.html#Register"><span class="hs-identifier hs-var">Register</span></a><span> </span><span class="hs-string">&quot;rd&quot;</span><span> </span><a href="Boilerplate.Instruction.html#END"><span class="hs-identifier hs-var">END</span></a><span>
+</span><a name="line-43"></a><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-comment">--Decode</span><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span>
+</span><a name="line-50"></a><span class="hs-comment">--what i want</span><span>
+</span><a name="line-51"></a><span class="hs-comment">{-
+mbInsSet = [ &quot;add&quot; &lt;&gt; typeA &lt;&gt; (+)
+           , &quot;addi&quot; &lt;&gt; typeB &lt;&gt; (+) ]
+-}</span><span>
+</span><a name="line-55"></a><span>
+</span><a name="line-56"></a><span>
+</span><a name="line-57"></a><span>
+</span><a name="line-58"></a><span>
+</span><a name="line-59"></a><span class="hs-comment">{-
+processTypeA :: (Monad m) =&gt; Word32 -&gt; StateT MicroBlaze m ()
+processTypeA w = do
+  (ins, rd, ra ,rb) &lt;- parseAFromWord32 w
+  -- parseAFromWord32 :: Word32 -&gt; (Ins(with operation), loc rd, loc ra, loc rb)
+  a &lt;- get ra
+  b &lt;- get rb
+  op &lt;- getOp ins
+  set rd (a `op` b)
+  return ()
+-}</span><span>
+</span><a name="line-70"></a><span>
+</span><a name="line-71"></a><span class="hs-comment">-- Maybe on second thought the instructions should not include sizing.</span><span>
+</span><a name="line-72"></a><span class="hs-comment">-- Register sizes could vary in size but still operate on the same ins set</span><span>
+</span><a name="line-73"></a><span>
+</span><a name="line-74"></a></pre></body></html>

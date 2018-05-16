@@ -25,6 +25,7 @@ dependencies:
 - transformers
 - mmorph
 - base-unicode-symbols
+- containers 
 
 library:
   source-dirs: src

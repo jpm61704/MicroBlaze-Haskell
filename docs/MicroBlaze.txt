@@ -9,6 +9,72 @@
 @package MicroBlaze
 @version 0.1.0.0
 
+module Parsing
+data Parser a
+P :: (String -> [(a, String)]) -> Parser a
+failure :: Parser a
+item :: Parser Char
+parse :: Parser a -> String -> [(a, String)]
+(+++) :: Parser a -> Parser a -> Parser a
+infixr 5 +++
+sat :: (Char -> Bool) -> Parser Char
+digit :: Parser Char
+lower :: Parser Char
+upper :: Parser Char
+letter :: Parser Char
+alphanum :: Parser Char
+char :: Char -> Parser Char
+string :: String -> Parser String
+many :: Parser a -> Parser [a]
+many1 :: Parser a -> Parser [a]
+ident :: Parser String
+nat :: Parser Int
+int :: Parser Int
+space :: Parser ()
+token :: Parser a -> Parser a
+identifier :: Parser String
+natural :: Parser Int
+integer :: Parser Int
+symbol :: String -> Parser String
+instance GHC.Base.Functor Parsing.Parser
+instance GHC.Base.Alternative Parsing.Parser
+instance GHC.Base.Applicative Parsing.Parser
+instance GHC.Base.Monad Parsing.Parser
+instance GHC.Base.MonadPlus Parsing.Parser
+
+
+module MachineState.MachineStatusRegister
+data RMSR
+
+-- | a zero-initialized (All False) MSR
+emptyRMSR :: RMSR
+
+-- | gets the status register in the form of a 32-bit word
+getMSRWord :: RMSR -> Word32
+
+-- | sets the status register from a 32-bit MSR word
+setMSRWord :: Word32 -> RMSR
+
+-- | Various status flags in the Machine State Register
+data MachineStatusBit
+CarryCopy :: MachineStatusBit
+DataCacheEnable :: MachineStatusBit
+DivisionByZero :: MachineStatusBit
+InstructionCacheEnable :: MachineStatusBit
+FSLError :: MachineStatusBit
+BreakInProgress :: MachineStatusBit
+Carry :: MachineStatusBit
+InterruptEnable :: MachineStatusBit
+BuslockEnable :: MachineStatusBit
+DelayEnable :: MachineStatusBit
+
+-- | Get the status of a specified flag
+getStatus :: MachineStatusBit -> RMSR -> Bool
+
+-- | sets the machine status bit indicated to the desired boolean value
+setStatus :: MachineStatusBit -> Bool -> RMSR -> RMSR
+instance GHC.Show.Show MachineState.MachineStatusRegister.MachineStatusBit
+
 
 -- | A resumption monad transformer, based on the formulation in the
 --   article <a>Cheap (But Functional) Threads</a> by William L. Harrison
@@ -77,6 +143,52 @@ refold :: (Monad m) => (o1 -> o2) -> (o1 -> i2 -> i1) -> ReacT i1 o1 m a -> Reac
 --   "tickwise".
 pipeline :: (Monad m) => ReacT i z m a -> ReacT z o m a -> ReacT i o m a
 
+module Boilerplate.Machines
+
+-- | A machine of inert(stateless) registers
+data Machine l sl r
+machine :: (FiniteBits r) => Int -> [String] -> Machine String String r
+
+-- | A register bank with labels l and registers r
+data RegisterBank l r
+
+-- | Creates a new register bank using a generator functions to produce
+--   label l
+newRegisterBank :: (FiniteBits r, Ord l) => Int -> (Int -> l) -> RegisterBank l r
+
+-- | produces a register bank with numeric labels proceeded by the
+--   character <tt>r</tt>. For example the first register is "r0" Important
+--   to note that this produces a strange order from labels being Strings
+standardRegisterBank :: (FiniteBits r) => Int -> RegisterBank String r
+type SpecialRegisters sl r = RegisterBank sl r
+specialFromList :: (FiniteBits r, Ord l) => [l] -> SpecialRegisters l r
+mb :: Machine String String Word32
+instance (GHC.Show.Show sl, GHC.Show.Show l, GHC.Show.Show r) => GHC.Show.Show (Boilerplate.Machines.Machine l sl r)
+instance (GHC.Show.Show r, GHC.Show.Show l) => GHC.Show.Show (Boilerplate.Machines.RegisterBank l r)
+
+module Boilerplate.Instruction
+type Name = String
+type Size = Word
+
+-- | This type is used for defining arguments and their sizes for use as
+--   instruction codes
+data Arguments
+Register :: Name -> Arguments -> Arguments
+Immediate :: Arguments -> Arguments
+END :: Arguments
+data InstructionType
+InsType :: Arguments -> InstructionType
+typeA :: InstructionType
+typeB :: InstructionType
+imm :: Arguments
+ra :: Arguments
+rb :: Arguments
+rd :: Arguments
+instance GHC.Read.Read Boilerplate.Instruction.Arguments
+instance GHC.Show.Show Boilerplate.Instruction.Arguments
+instance GHC.Base.Monoid Boilerplate.Instruction.Arguments
+instance Data.Semigroup.Semigroup Boilerplate.Instruction.Arguments
+
 
 module Boilerplate
 
@@ -113,11 +225,8 @@ W6 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W6
 -- | 11-bit data
 data W11
 W11 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W11
-
--- | 26-bit data
-data W26
-W26 :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> W26
-instance GHC.Show.Show Boilerplate.W26
+maybeSignExtend :: (Integral a, Integral b, FiniteBits a, FiniteBits b) => a -> Maybe b
+showFiniteBits :: (FiniteBits a) => a -> String
 instance GHC.Show.Show Boilerplate.W11
 instance GHC.Show.Show Boilerplate.W6
 instance GHC.Show.Show Boilerplate.W5
@@ -210,6 +319,9 @@ arithmeticShiftRight :: W8 -> Bit -> (Bit, W8)
 logicalShiftRight :: W8 -> (Bit, W8)
 toInteger :: W8 -> Int
 fromInteger :: Int -> W8
+
+module Boilerplate.W16
+fromInteger :: Int -> W16
 
 
 module Boilerplate.W32
@@ -416,58 +528,58 @@ Add :: MBReg -> MBReg -> MBReg -> Ins
 Addc :: MBReg -> MBReg -> MBReg -> Ins
 Addk :: MBReg -> MBReg -> MBReg -> Ins
 Addkc :: MBReg -> MBReg -> MBReg -> Ins
-Addi :: MBReg -> MBReg -> W16 -> Ins
-Addic :: MBReg -> MBReg -> W16 -> Ins
-Addik :: MBReg -> MBReg -> W16 -> Ins
-Addikc :: MBReg -> MBReg -> W16 -> Ins
+Addi :: MBReg -> MBReg -> Word16 -> Ins
+Addic :: MBReg -> MBReg -> Word16 -> Ins
+Addik :: MBReg -> MBReg -> Word16 -> Ins
+Addikc :: MBReg -> MBReg -> Word16 -> Ins
 And :: MBReg -> MBReg -> MBReg -> Ins
-Andi :: MBReg -> MBReg -> W16 -> Ins
+Andi :: MBReg -> MBReg -> Word16 -> Ins
 Andn :: MBReg -> MBReg -> MBReg -> Ins
-Andni :: MBReg -> MBReg -> W16 -> Ins
-Beq :: MBReg -> MBReg -> W11 -> Ins
-Beqd :: MBReg -> MBReg -> W11 -> Ins
-Beqi :: MBReg -> W16 -> Ins
-Beqid :: MBReg -> W16 -> Ins
-Bge :: MBReg -> MBReg -> W11 -> Ins
-Bged :: MBReg -> MBReg -> W11 -> Ins
-Bgei :: MBReg -> W16 -> Ins
-Bgeid :: MBReg -> W16 -> Ins
-Bgt :: MBReg -> MBReg -> W11 -> Ins
-Bgtd :: MBReg -> MBReg -> W11 -> Ins
-Bgti :: MBReg -> W16 -> Ins
-Bgtid :: MBReg -> W16 -> Ins
-Ble :: MBReg -> MBReg -> W11 -> Ins
-Bled :: MBReg -> MBReg -> W11 -> Ins
-Blei :: MBReg -> W16 -> Ins
-Bleid :: MBReg -> W16 -> Ins
-Blt :: MBReg -> MBReg -> W11 -> Ins
-Bltd :: MBReg -> MBReg -> W11 -> Ins
-Blti :: MBReg -> W16 -> Ins
-Bltid :: MBReg -> W16 -> Ins
-Bne :: MBReg -> MBReg -> W11 -> Ins
-Bned :: MBReg -> MBReg -> W11 -> Ins
-Bnei :: MBReg -> W16 -> Ins
-Bneid :: MBReg -> W16 -> Ins
+Andni :: MBReg -> MBReg -> Word16 -> Ins
+Beq :: MBReg -> MBReg -> Ins
+Beqd :: MBReg -> MBReg -> Ins
+Beqi :: MBReg -> Word16 -> Ins
+Beqid :: MBReg -> Word16 -> Ins
+Bge :: MBReg -> MBReg -> Ins
+Bged :: MBReg -> MBReg -> Ins
+Bgei :: MBReg -> Word16 -> Ins
+Bgeid :: MBReg -> Word16 -> Ins
+Bgt :: MBReg -> MBReg -> Ins
+Bgtd :: MBReg -> MBReg -> Ins
+Bgti :: MBReg -> Word16 -> Ins
+Bgtid :: MBReg -> Word16 -> Ins
+Ble :: MBReg -> MBReg -> Ins
+Bled :: MBReg -> MBReg -> Ins
+Blei :: MBReg -> Word16 -> Ins
+Bleid :: MBReg -> Word16 -> Ins
+Blt :: MBReg -> MBReg -> Ins
+Bltd :: MBReg -> MBReg -> Ins
+Blti :: MBReg -> Word16 -> Ins
+Bltid :: MBReg -> Word16 -> Ins
+Bne :: MBReg -> MBReg -> Ins
+Bned :: MBReg -> MBReg -> Ins
+Bnei :: MBReg -> Word16 -> Ins
+Bneid :: MBReg -> Word16 -> Ins
 Br :: MBReg -> Ins
 Bra :: MBReg -> Ins
 Brd :: MBReg -> Ins
 Brad :: MBReg -> Ins
 Brld :: MBReg -> MBReg -> Ins
 Brald :: MBReg -> MBReg -> Ins
-Bri :: W16 -> Ins
-Brai :: W16 -> Ins
-Brid :: W16 -> Ins
-Braid :: W16 -> Ins
-Brlid :: MBReg -> W16 -> Ins
-Bralid :: MBReg -> W16 -> Ins
+Bri :: Word16 -> Ins
+Brai :: Word16 -> Ins
+Brid :: Word16 -> Ins
+Braid :: Word16 -> Ins
+Brlid :: MBReg -> Word16 -> Ins
+Bralid :: MBReg -> Word16 -> Ins
 Brk :: MBReg -> MBReg -> Ins
-Brki :: MBReg -> W16 -> Ins
+Brki :: MBReg -> Word16 -> Ins
 Bsrl :: MBReg -> MBReg -> MBReg -> Ins
 Bsra :: MBReg -> MBReg -> MBReg -> Ins
 Bsll :: MBReg -> MBReg -> MBReg -> Ins
-Bsrli :: MBReg -> MBReg -> W16 -> Ins
-Bsrai :: MBReg -> MBReg -> W16 -> Ins
-Bslli :: MBReg -> MBReg -> W16 -> Ins
+Bsrli :: MBReg -> MBReg -> Word16 -> Ins
+Bsrai :: MBReg -> MBReg -> Word16 -> Ins
+Bslli :: MBReg -> MBReg -> Word16 -> Ins
 Cmp :: MBReg -> MBReg -> MBReg -> Ins
 Cmpu :: MBReg -> MBReg -> MBReg -> Ins
 Get :: MBReg -> Int -> Ins
@@ -476,21 +588,21 @@ Cget :: MBReg -> Int -> Ins
 Ncget :: MBReg -> Int -> Ins
 Idiv :: MBReg -> MBReg -> MBReg -> Ins
 Idivu :: MBReg -> MBReg -> MBReg -> Ins
-Imm :: W16 -> Ins
+Imm :: Word16 -> Ins
 Lbu :: MBReg -> MBReg -> MBReg -> Ins
-Lbui :: MBReg -> MBReg -> W16 -> Ins
+Lbui :: MBReg -> MBReg -> Word16 -> Ins
 Lhu :: MBReg -> MBReg -> MBReg -> Ins
-Lhui :: MBReg -> MBReg -> W16 -> Ins
+Lhui :: MBReg -> MBReg -> Word16 -> Ins
 Lw :: MBReg -> MBReg -> MBReg -> Ins
-Lwi :: MBReg -> MBReg -> W16 -> Ins
+Lwi :: MBReg -> MBReg -> Word16 -> Ins
 Mfs :: MBReg -> MBSReg -> Ins
 Mts :: MBSReg -> MBReg -> Ins
 Mul :: MBReg -> MBReg -> MBReg -> Ins
 Mulhu :: MBReg -> MBReg -> MBReg -> Ins
 Mulhsu :: MBReg -> MBReg -> MBReg -> Ins
-Muli :: MBReg -> MBReg -> W16 -> Ins
+Muli :: MBReg -> MBReg -> Word16 -> Ins
 Or :: MBReg -> MBReg -> MBReg -> Ins
-Ori :: MBReg -> MBReg -> W16 -> Ins
+Ori :: MBReg -> MBReg -> Word16 -> Ins
 Pcmpbf :: MBReg -> MBReg -> MBReg -> Ins
 Pcmpne :: MBReg -> MBReg -> MBReg -> Ins
 Put :: MBReg -> Int -> Ins
@@ -501,29 +613,29 @@ Rsub :: MBReg -> MBReg -> MBReg -> Ins
 Rsubc :: MBReg -> MBReg -> MBReg -> Ins
 Rsubk :: MBReg -> MBReg -> MBReg -> Ins
 Rsubkc :: MBReg -> MBReg -> MBReg -> Ins
-Rsubi :: MBReg -> MBReg -> W16 -> Ins
-Rsubic :: MBReg -> MBReg -> W16 -> Ins
-Rsubik :: MBReg -> MBReg -> W16 -> Ins
-Rsubikc :: MBReg -> MBReg -> W16 -> Ins
-Rtbd :: MBReg -> W16 -> Ins
-Rtid :: MBReg -> W16 -> Ins
-Rted :: MBReg -> W16 -> Ins
-Rtsd :: MBReg -> W16 -> Ins
+Rsubi :: MBReg -> MBReg -> Word16 -> Ins
+Rsubic :: MBReg -> MBReg -> Word16 -> Ins
+Rsubik :: MBReg -> MBReg -> Word16 -> Ins
+Rsubikc :: MBReg -> MBReg -> Word16 -> Ins
+Rtbd :: MBReg -> Word16 -> Ins
+Rtid :: MBReg -> Word16 -> Ins
+Rted :: MBReg -> Word16 -> Ins
+Rtsd :: MBReg -> Word16 -> Ins
 Sb :: MBReg -> MBReg -> MBReg -> Ins
-Sbi :: MBReg -> MBReg -> W16 -> Ins
+Sbi :: MBReg -> MBReg -> Word16 -> Ins
 Sext8 :: MBReg -> MBReg -> Ins
 Sext16 :: MBReg -> MBReg -> Ins
 Sh :: MBReg -> MBReg -> MBReg -> Ins
-Shi :: MBReg -> MBReg -> W16 -> Ins
+Shi :: MBReg -> MBReg -> Word16 -> Ins
 Sra :: MBReg -> MBReg -> Ins
 Src :: MBReg -> MBReg -> Ins
 Srl :: MBReg -> MBReg -> Ins
 Sw :: MBReg -> MBReg -> MBReg -> Ins
-Swi :: MBReg -> MBReg -> W16 -> Ins
+Swi :: MBReg -> MBReg -> Word16 -> Ins
 Wdc :: MBReg -> MBReg -> Ins
 Wic :: MBReg -> MBReg -> Ins
 Xor :: MBReg -> MBReg -> MBReg -> Ins
-Xori :: MBReg -> MBReg -> W16 -> Ins
+Xori :: MBReg -> MBReg -> Word16 -> Ins
 instance GHC.Show.Show InsSet.Ins
 instance GHC.Show.Show InsSet.MBSReg
 instance GHC.Enum.Enum InsSet.MBReg
@@ -533,53 +645,16 @@ instance GHC.Show.Show InsSet.MBSize
 
 
 module Decode
-decode :: W32 -> Ins
 instance GHC.Show.Show Decode.RawIns
 
 
 module MachineState.InstructionBuffer
 data InstructionBuffer
-InstructionBuffer :: Maybe W32 -> Maybe Ins -> InstructionBuffer
-[_decode] :: InstructionBuffer -> Maybe W32
+InstructionBuffer :: Maybe Word32 -> Maybe Ins -> InstructionBuffer
+[_decode] :: InstructionBuffer -> Maybe Word32
 [_execute] :: InstructionBuffer -> Maybe Ins
-type Address = W32
+type Address = Word32
 emptyInstructionBuffer :: InstructionBuffer
-
-
-module MachineState.MachineStatusRegister
-
--- | the machine status register
-data RMSR
-RMSR :: Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> Bit -> RMSR
-
--- | a zero-initialized (All False) MSR
-emptyRMSR :: RMSR
-
--- | gets the status register in the form of a 32-bit word
-getMSRWord :: RMSR -> W32
-
--- | sets the status register from a 32-bit MSR word
-setMSRWord :: W32 -> RMSR
-
--- | Various status flags in the Machine State Register
-data MachineStatusBit
-CarryCopy :: MachineStatusBit
-DataCacheEnable :: MachineStatusBit
-DivisionByZero :: MachineStatusBit
-InstructionCacheEnable :: MachineStatusBit
-FSLError :: MachineStatusBit
-BreakInProgress :: MachineStatusBit
-Carry :: MachineStatusBit
-InterruptEnable :: MachineStatusBit
-BuslockEnable :: MachineStatusBit
-DelayEnable :: MachineStatusBit
-
--- | Get the status of a specified flag
-getStatus :: MachineStatusBit -> RMSR -> Bit
-
--- | sets the machine status bit indicated to the desired boolean value
-setStatus :: MachineStatusBit -> Bit -> RMSR -> RMSR
-instance GHC.Show.Show MachineState.MachineStatusRegister.MachineStatusBit
 
 
 module MachineState
@@ -589,7 +664,7 @@ data MicroBlaze
 MicroBlaze :: MBRegisters -> RPC -> RMSR -> InstructionBuffer -> MicroBlaze
 
 -- | Standard word size for MicroBlaze
-type MBWord = W32
+type MBWord = Word32
 
 -- | Creates a zero-initialized MicroBlaze controller
 newMicroBlaze :: MicroBlaze
@@ -598,22 +673,22 @@ newMicroBlaze :: MicroBlaze
 type RPC = MBWord
 
 -- | Gets the RPC from a MicroBlaze State
-getRPC :: State MicroBlaze MBWord
+getRPC :: (Monad m) => StateT MicroBlaze m MBWord
 
 -- | Sets the RPC in a MicroBlaze State
-setRPC :: MBWord -> State MicroBlaze ()
+setRPC :: (Monad m) => MBWord -> StateT MicroBlaze m ()
 
 -- | Sets a specified bit on the machine status register
-setMSRBit :: MachineStatusBit -> Bit -> State MicroBlaze ()
+setMSRBit :: (Monad m) => MachineStatusBit -> Bool -> StateT MicroBlaze m ()
 
 -- | Gets the value of a specified MSR Bit
-getMSRBit :: MachineStatusBit -> State MicroBlaze Bit
+getMSRBit :: (Monad m) => MachineStatusBit -> StateT MicroBlaze m Bool
 
 -- | Pulls the enture Machine Status Register as a 32-bit Word
-pullMSR :: State MicroBlaze W32
+pullMSR :: (Monad m) => StateT MicroBlaze m Word32
 
 -- | Pushes an enture MSR as a 32-bit word
-pushMSR :: W32 -> State MicroBlaze ()
+pushMSR :: (Monad m) => Word32 -> StateT MicroBlaze m ()
 
 -- | The register store for the Microblaze
 data MBRegisters
@@ -622,47 +697,47 @@ data MBRegisters
 emptyRegisters :: MBRegisters
 
 -- | gets the value at a specified register
-getRegister :: MBReg -> State MicroBlaze MBWord
+getRegister :: (Monad m) => MBReg -> StateT MicroBlaze m MBWord
 
 -- | sets the value at a specified register
-setRegister :: MBReg -> MBWord -> State MicroBlaze ()
+setRegister :: (Monad m) => MBReg -> MBWord -> StateT MicroBlaze m ()
 
 -- | read a given register
 readRegister :: MBReg -> MBRegisters -> MBWord
-type Address = W32
+type Address = Word32
 
 -- | loads a 32-bit word from memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-loadWord :: W32 -> State MicroBlaze W32
+loadWord :: (Monad m) => Word32 -> StateT MicroBlaze m Word32
 
 -- | loads a 16-bit half-word from memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-loadHalfWord :: W32 -> State MicroBlaze W16
+loadHalfWord :: (Monad m) => Word32 -> StateT MicroBlaze m Word16
 
 -- | loads a byte from memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-loadByte :: W32 -> State MicroBlaze W8
+loadByte :: (Monad m) => Word32 -> StateT MicroBlaze m Word8
 
 -- | stores a 32-bit word in memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-storeWord :: W32 -> W32 -> W32 -> State MicroBlaze ()
+storeWord :: (Monad m) => Word32 -> Word32 -> Word32 -> StateT MicroBlaze m ()
 
 -- | stores a 16-bit half-word in memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-storeHalfWord :: W16 -> W32 -> W32 -> State MicroBlaze ()
+storeHalfWord :: (Monad m) => Word16 -> Word32 -> Word32 -> StateT MicroBlaze m ()
 
 -- | stores a 8-bit byte in memory
 --   
 --   <b>NOT YET IMPLEMENTED</b>
-storeByte :: W8 -> W32 -> W32 -> State MicroBlaze ()
-fetch :: Address -> State MicroBlaze W32
+storeByte :: (Monad m) => Word8 -> Word32 -> Word32 -> StateT MicroBlaze m ()
+fetch :: Address -> State MicroBlaze Word32
 pushInstructionBuffer :: InstructionBuffer -> State MicroBlaze ()
-pullDecode :: State MicroBlaze (Maybe W32)
+pullDecode :: State MicroBlaze (Maybe Word32)
 pullExec :: State MicroBlaze (Maybe Ins)
 
 
@@ -676,13 +751,12 @@ printStatus :: RMSR -> IO ()
 
 module Interpreter
 executeNext :: State MicroBlaze ()
-decodeNext :: State MicroBlaze (Maybe Ins)
 nextPCAddress :: State MicroBlaze Address
-
--- | note that all exec does is process the given instructions as it can
---   given the machine state information. Delays and other temporal actions
---   must be handled at a different level of the program
-exec :: Ins -> State MicroBlaze ()
+isPositive :: Word32 -> Bool
+isNegative :: Word32 -> Bool
+lessThanOrEqualToZero :: Word32 -> Bool
+exec :: (Monad m) => Ins -> StateT MicroBlaze m ()
+addWithCarry :: (Num a, Ord a) => a -> a -> Bool -> (Bool, a)
 
 -- | Delay Flag for Branching
 type DelayFlag = Bool
@@ -690,119 +764,251 @@ type DelayFlag = Bool
 -- | Branch Input Type
 data BranchInput
 TypeA :: MBReg -> MBReg -> BranchInput
-TypeB :: MBReg -> W16 -> BranchInput
+TypeB :: MBReg -> Word16 -> BranchInput
 
 -- | Absolute Branch Input Type
 data AbsoluteBranchInput
 AbsR :: MBReg -> AbsoluteBranchInput
-AbsI :: W16 -> AbsoluteBranchInput
+AbsI :: Word16 -> AbsoluteBranchInput
 
--- | W32 Isomorphism type
-type Op = W32 -> W32 -> W32
+-- | Isomorphism type
+type Op = Word32 -> Word32 -> Word32
 
 -- | execute a type a instruction using basic operators
-execTypeA :: Op -> MBReg -> MBReg -> MBReg -> State MicroBlaze ()
+execTypeA :: (Monad m) => Op -> MBReg -> MBReg -> MBReg -> StateT MicroBlaze m ()
 
 -- | execute a type b instruction using basic operators
-execTypeB :: Op -> MBReg -> MBReg -> W16 -> State MicroBlaze ()
+execTypeB :: (Monad m) => Op -> MBReg -> MBReg -> Word16 -> StateT MicroBlaze m ()
 
 -- | SHOULD BE DEPRECATED
-getBranchInputValue :: BranchInput -> State MicroBlaze W32
+getBranchInputValue :: (Monad m) => BranchInput -> StateT MicroBlaze m Word32
 
 -- | SHOULD BE DEPRECATED
-getBranchRegisterA :: BranchInput -> State MicroBlaze W32
+getBranchRegisterA :: (Monad m) => BranchInput -> StateT MicroBlaze m Word32
 
 -- | branch to an absolute address
-absoluteBranch :: AbsoluteBranchInput -> State MicroBlaze ()
+absoluteBranch :: (Monad m) => AbsoluteBranchInput -> StateT MicroBlaze m ()
 
 -- | branch to a relative address
-branch :: BranchInput -> (MBWord -> Bit) -> State MicroBlaze ()
+branch :: (Monad m) => BranchInput -> (MBWord -> Bool) -> StateT MicroBlaze m ()
 
 -- | adding mechanism for MicroBlaze (likely can be deprecated)
-add :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
+add :: (Monad m) => CarryFlag -> KeepFlag -> (MBReg, Either MBReg Word16) -> MBReg -> StateT MicroBlaze m ()
 
 -- | hardware subtraction (likely can be deprecated)
-sub :: CarryFlag -> KeepFlag -> (MBReg, Either MBReg W16) -> MBReg -> State MicroBlaze ()
+sub :: (Monad m) => CarryFlag -> KeepFlag -> (MBReg, Either MBReg Word16) -> MBReg -> StateT MicroBlaze m ()
+reverseSubtraction :: (Num a, Bits a, Ord a) => a -> a -> Bool -> (Bool, a)
 
 -- | Carry Flag for adder
 type CarryFlag = Bool
 
 -- | Keep Flag for adder
 type KeepFlag = Bool
-
--- | size of load operation, include sign-extension function of appropriate
---   size
 data LoadSize
 LWord :: LoadSize
-LHalfWord :: (W16 -> W32) -> LoadSize
-LByte :: (W8 -> W32) -> LoadSize
+LHalfWord :: LoadSize
+LByte :: LoadSize
 
 -- | Either-like datatype to differentiate TypeA and TypeB data
 data ImmOrReg
 Register :: MBReg -> ImmOrReg
-Immediate :: W16 -> ImmOrReg
+Immediate :: Word16 -> ImmOrReg
 
 -- | Loads data from memory, The two register offsets are added to obtain
 --   an address
-load :: LoadSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
+load :: (Monad m) => LoadSize -> MBReg -> MBReg -> ImmOrReg -> StateT MicroBlaze m ()
 data StoreSize
 SWord :: StoreSize
 SHalfWord :: StoreSize
 SByte :: StoreSize
-store :: StoreSize -> MBReg -> MBReg -> ImmOrReg -> State MicroBlaze ()
+store :: (Monad m) => StoreSize -> MBReg -> MBReg -> ImmOrReg -> StateT MicroBlaze m ()
 
 -- | pulls either the MSR or PC register into given register
-moveFromSRegister :: MBReg -> MBSReg -> State MicroBlaze ()
+moveFromSRegister :: (Monad m) => MBReg -> MBSReg -> StateT MicroBlaze m ()
 
 -- | puts a Word into a special purpose register. Does not support updates
 --   to the program counter
-moveToSRegister :: MBSReg -> MBReg -> State MicroBlaze ()
+moveToSRegister :: (Monad m) => MBSReg -> MBReg -> StateT MicroBlaze m ()
 
 -- | links the current program counter value into the specified register
-link :: MBReg -> State MicroBlaze ()
+link :: (Monad m) => MBReg -> StateT MicroBlaze m ()
 
 -- | sets the delay flag in the machine status register
-delay :: State MicroBlaze ()
+delay :: (Monad m) => StateT MicroBlaze m ()
 
 -- | returns the pc from a break, interrupt, or subroutine
-returnFrom :: MBReg -> W16 -> State MicroBlaze ()
-sext8 :: MBReg -> MBReg -> State MicroBlaze ()
-sext16 :: MBReg -> MBReg -> State MicroBlaze ()
-shiftRightArithmetic :: CarryFlag -> MBReg -> MBReg -> State MicroBlaze ()
-shiftRightLogical :: MBReg -> MBReg -> State MicroBlaze ()
+returnFrom :: (Monad m) => MBReg -> Word16 -> StateT MicroBlaze m ()
+sext8 :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
+sext16 :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
+shiftRightArithmetic :: (Monad m) => CarryFlag -> MBReg -> MBReg -> StateT MicroBlaze m ()
+shiftRightLogical :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
+logicalShiftRight :: (Bits a) => a -> (Bool, a)
+arithmeticShiftRight :: (FiniteBits a) => a -> Bool -> (Bool, a)
+leastSignificantHalfWord :: Word32 -> Word16
+leastSignificantByte :: Word32 -> Word8
+maybeSignExtend :: (Integral a, Integral b, FiniteBits a, FiniteBits b) => a -> Maybe b
+showFiniteBits :: (FiniteBits a) => a -> String
+backExtend :: (Integral a, Integral b, FiniteBits a, FiniteBits b) => a -> Maybe b
 
 
 module MachineState.Execution
 data InboundSignals
-In :: Maybe (MBSize, LoadData, MBReg) -> Maybe W32 -> InboundSignals
+In :: Maybe (MBSize, LoadData, MBReg) -> Maybe Ins -> InboundSignals
 [_readData] :: InboundSignals -> Maybe (MBSize, LoadData, MBReg)
-[_instruction] :: InboundSignals -> Maybe W32
+[_instruction] :: InboundSignals -> Maybe Ins
 data OutboundSignals
-Out :: Address -> Maybe (Address, MBReg, MBSize) -> Maybe (Address, StoreData, MBSize) -> OutboundSignals
+Out :: Address -> Maybe (Address, MBReg, MBSize) -> Maybe (Address, StoreData, MBSize) -> MicroBlaze -> OutboundSignals
 [_nextInstruction] :: OutboundSignals -> Address
 [_read] :: OutboundSignals -> Maybe (Address, MBReg, MBSize)
 [_write] :: OutboundSignals -> Maybe (Address, StoreData, MBSize)
-type StoreData = W32
-type LoadData = W32
-type MBlazeRe = ReacT InboundSignals OutboundSignals (State MicroBlaze)
-fde :: InboundSignals -> MBlazeRe ()
-incrementPC :: State MicroBlaze ()
-makeOutbound :: Maybe Ins -> State MicroBlaze OutboundSignals
-processWrite :: Ins -> State MicroBlaze (Maybe (Address, StoreData, MBSize))
-unpackWrite :: Ins -> Maybe (MBReg, MBReg, Either W16 MBReg, MBSize)
-processLoad :: Ins -> State MicroBlaze (Maybe (Address, MBReg, MBSize))
-unpackLoad :: Ins -> Maybe (MBReg, MBReg, Either W16 MBReg, MBSize)
-processIncomingMemory :: InboundSignals -> State MicroBlaze ()
+[_st] :: OutboundSignals -> MicroBlaze
+type StoreData = Word32
+type LoadData = Word32
+type MBlazeRe m = ReacT InboundSignals OutboundSignals (StateT MicroBlaze m)
+startFDE :: (Monad m) => MBlazeRe m ()
+fde :: (Monad m) => InboundSignals -> MBlazeRe m ()
+incrementPC :: (Monad m) => StateT MicroBlaze m ()
+makeOutbound :: (Monad m) => Maybe Ins -> StateT MicroBlaze m OutboundSignals
+processWrite :: (Monad m) => Ins -> StateT MicroBlaze m (Maybe (Address, StoreData, MBSize))
+unpackWrite :: Ins -> Maybe (MBReg, MBReg, Either Word16 MBReg, MBSize)
+processLoad :: (Monad m) => Ins -> StateT MicroBlaze m (Maybe (Address, MBReg, MBSize))
+unpackLoad :: Ins -> Maybe (MBReg, MBReg, Either Word16 MBReg, MBSize)
+processIncomingMemory :: (Monad m) => InboundSignals -> StateT MicroBlaze m ()
+
+module ParserMicroBlaze
+expandFilePath :: FilePath -> IO FilePath
+parseMB :: FilePath -> IO b
+parseREPL :: IO [Command]
+data Op
+Plus :: Op
+Minus :: Op
+Times :: Op
+Div :: Op
+data Exp
+Const :: Int -> Exp
+Aexp :: Op -> Exp -> Exp -> Exp
+data Oper
+Register :: Int -> Oper
+data Imm
+Immed :: Int -> Imm
+type Command = Ins
+parseOp :: Parser Op
+parseConst :: Parser Exp
+parseAexp :: Parser Exp
+parseReg :: Parser MBReg
+parseSpecReg :: Parser MBSReg
+numToReg :: Int -> Maybe MBReg
+parseImm :: Parser Word16
+parseExp :: Parser Exp
+parseCommand :: Parser Command
+parseAdd :: Parser Command
+parseAddc :: Parser Command
+parseAddk :: Parser Command
+parseAddkc :: Parser Command
+parseAddi :: Parser Command
+parseAddic :: Parser Command
+parseAddik :: Parser Command
+parseAddikc :: Parser Command
+parseAnd :: Parser Command
+parseAndi :: Parser Command
+parseAndn :: Parser Command
+parseAndni :: Parser Command
+parseBsrl :: Parser Command
+parseBsra :: Parser Command
+parseBsll :: Parser Command
+parseBsrli :: Parser Command
+parseBsrai :: Parser Command
+parseBslli :: Parser Command
+parseCmp :: Parser Command
+parseCmpu :: Parser Command
+parseIdiv :: Parser Command
+parseIdivu :: Parser Command
+parseLbu :: Parser Command
+parseLbui :: Parser Command
+parseLhu :: Parser Command
+parseLhui :: Parser Command
+parseLw :: Parser Command
+parseLwi :: Parser Command
+parseMul :: Parser Command
+parseMuli :: Parser Command
+parseOr :: Parser Command
+parseOri :: Parser Command
+parseRsub :: Parser Command
+parseRsubc :: Parser Command
+parseRsubk :: Parser Command
+parseRsubkc :: Parser Command
+parseRsubi :: Parser Command
+parseRsubic :: Parser Command
+parseRsubik :: Parser Command
+parseRsubikc :: Parser Command
+parseSb :: Parser Command
+parseSbi :: Parser Command
+parseSh :: Parser Command
+parseShi :: Parser Command
+parseSw :: Parser Command
+parseSwi :: Parser Command
+parseXor :: Parser Command
+parseXori :: Parser Command
+parseBeq :: Parser Command
+parseBeqd :: Parser Command
+parseBeqi :: Parser Command
+parseBeqid :: Parser Command
+parseBge :: Parser Command
+parseBged :: Parser Command
+parseBgei :: Parser Command
+parseBgeid :: Parser Command
+parseBgt :: Parser Command
+parseBgtd :: Parser Command
+parseBgti :: Parser Command
+parseBgtid :: Parser Command
+parseBle :: Parser Command
+parseBled :: Parser Command
+parseBlei :: Parser Command
+parseBleid :: Parser Command
+parseBlt :: Parser Command
+parseBltd :: Parser Command
+parseBlti :: Parser Command
+parseBltid :: Parser Command
+parseBne :: Parser Command
+parseBned :: Parser Command
+parseBnei :: Parser Command
+parseBneid :: Parser Command
+parseBrld :: Parser Command
+parseBrald :: Parser Command
+parseBrlid :: Parser Command
+parseBralid :: Parser Command
+parseBrk :: Parser Command
+parseBrki :: Parser Command
+parseMfs :: Parser Command
+parseMts :: Parser Command
+parseRtbd :: Parser Command
+parseRtid :: Parser Command
+parseRtsd :: Parser Command
+parseSextHex :: Parser Command
+parseSextOct :: Parser Command
+parseSra :: Parser Command
+parseSrc :: Parser Command
+parseSrl :: Parser Command
+parseWic :: Parser Command
+parseBr :: Parser Command
+parseBra :: Parser Command
+parseBrad :: Parser Command
+parseBri :: Parser Command
+parseBrai :: Parser Command
+parseBrid :: Parser Command
+parseBraid :: Parser Command
+instance GHC.Show.Show ParserMicroBlaze.Imm
+instance GHC.Show.Show ParserMicroBlaze.Oper
+instance GHC.Show.Show ParserMicroBlaze.Exp
+instance GHC.Show.Show ParserMicroBlaze.Op
 
 
 module REPL
-repl :: OutboundSignals -> IO (InboundSignals)
+runFreshRepl :: IO ((), MicroBlaze)
+repl :: OutboundSignals -> StateT MicroBlaze IO (InboundSignals)
 postWrite :: Maybe (Address, StoreData, MBSize) -> IO ()
 getRead :: Maybe (Address, MBReg, MBSize) -> IO (Maybe (MBSize, LoadData, MBReg))
 buildInstruction :: Address -> IO (Ins)
 
 
 module TestData
-
--- | An addition test
-quickTest :: State MicroBlaze W32

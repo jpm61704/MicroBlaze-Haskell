@@ -4,8 +4,7 @@ import System.IO
 import System.Environment
 import Parsing
 import InsSet
-import Boilerplate
-import qualified Boilerplate.W16 as W16
+import Data.Word
 
 -- utility function to expand ~ in filenames
 expandFilePath :: FilePath -> IO FilePath
@@ -20,9 +19,6 @@ parseMB p_ = do p      <- expandFilePath p_
                 let pr = parse (many1 parseCommand) s
                 case pr of
                    [] -> fail "Argghhh!"
-    (require 'haskell-prettify "~/.emacs.d/lisp/prettify-alists/haskell-prettify.el" t)
-(add-hook 'haskell-mode-hook 'haskell-prettify-enable)
-(add-hook 'haskell-interactive-mode-hook 'haskell-prettify-enable)               [(ss,_)] -> return ss
                    _         -> fail "Too many parses"
 
 parseREPL :: IO [Command]
@@ -119,10 +115,10 @@ numToReg x
                
 
 
-parseImm :: Parser W16
+parseImm :: Parser Word16
 parseImm = do
-   n <- natural   
-   return $ W16.fromInteger n
+   n <- natural
+   return $ fromIntegral n
 
 parseExp = parseConst +++ parseAexp
 
@@ -718,7 +714,7 @@ parseBeq = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Beq r1 r2 w11_blank)
+   return (Beq r1 r2)
 
 parseBeqd :: Parser Command
 parseBeqd = do
@@ -726,7 +722,7 @@ parseBeqd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Beqd r1 r2 w11_blank)
+   return (Beqd r1 r2 )
 
     
 parseBeqi :: Parser Command
@@ -751,7 +747,7 @@ parseBge = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bge r1 r2 w11_blank)
+   return (Bge r1 r2 )
 
 parseBged :: Parser Command
 parseBged = do
@@ -759,7 +755,7 @@ parseBged = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bged r1 r2 w11_blank)
+   return (Bged r1 r2 )
 
     
 parseBgei :: Parser Command
@@ -784,7 +780,7 @@ parseBgt = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bgt r1 r2 w11_blank)
+   return (Bgt r1 r2 )
 
 parseBgtd :: Parser Command
 parseBgtd = do
@@ -792,7 +788,7 @@ parseBgtd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bgtd r1 r2 w11_blank)
+   return (Bgtd r1 r2 )
 
     
 parseBgti :: Parser Command
@@ -817,7 +813,7 @@ parseBle = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Ble r1 r2 w11_blank)
+   return (Ble r1 r2 )
 
 parseBled :: Parser Command
 parseBled = do
@@ -825,7 +821,7 @@ parseBled = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bled r1 r2 w11_blank)
+   return (Bled r1 r2 )
 
     
 parseBlei :: Parser Command
@@ -851,7 +847,7 @@ parseBlt = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Blt r1 r2 w11_blank)
+   return (Blt r1 r2 )
 
 parseBltd :: Parser Command
 parseBltd = do
@@ -859,9 +855,9 @@ parseBltd = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bltd r1 r2 w11_blank)
+   return (Bltd r1 r2 )
 
-    
+ 
 parseBlti :: Parser Command
 parseBlti = do
    symbol "blti"
@@ -885,7 +881,7 @@ parseBne = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bne r1 r2 w11_blank)
+   return (Bne r1 r2 )
 
 parseBned :: Parser Command
 parseBned = do
@@ -893,7 +889,7 @@ parseBned = do
    r1 <- parseReg
    symbol ","
    r2 <- parseReg
-   return (Bned r1 r2 w11_blank)
+   return (Bned r1 r2 )
 
     
 parseBnei :: Parser Command
@@ -1092,9 +1088,6 @@ parseBraid = do
    symbol "braid"
    imm1 <- parseImm
    return (Braid imm1)
-
-
-w11_blank = W11 C C C C C C C C C C C
 
 
 {-
