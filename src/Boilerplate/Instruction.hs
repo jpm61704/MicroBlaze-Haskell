@@ -1,73 +1,51 @@
 module Boilerplate.Instruction where
 
-import Data.Word
-import Data.Semigroup
+import           Boilerplate.Machines
+import           Boilerplate.Machines.State
+import qualified Data.Map.Lazy              as M
+import           Data.Semigroup
+import           Data.Word
 
-type Name = String
-type Size = Word
+-- | The definition of some abstract instruction
+data Instruction l sl r m a = Ins { name :: String
+                                  , exec :: ExecutionFunction l sl r m a
+                                  }
 
--- * Definition of Arguments Type
+-- | arguments to a command
+-- represent a mapping of register argument labels to their register label
+-- example: ra -> r1 or rd -> r32
+data Arguments l = Args (M.Map l l)
 
--- | This type is used for defining arguments and their sizes
---   for use as instruction codes
-data Arguments = Register Name Arguments
-               | Immediate Arguments
-               | END
-               deriving(Show, Read)
+-- | the command that actually executes on a machine
+data Command l sl r m a = Command { instruction :: (Instruction l sl r m a)
+                                  , arguments   :: (Arguments l) }
 
-instance Monoid Arguments where
-  mempty = END
-  mappend = (<>)
+getExec :: Command l sl r m a -> ExecutionFunction l sl r m a
+getExec (Command ins _) = exec ins
 
-instance Semigroup Arguments where
-  (Register n xs) <> x = Register n (xs <> x)
-  (Immediate xs) <> x = Immediate (xs <> x)
-  END <> x = x
+getArgs :: Command l sl r m a -> Arguments l
+getArgs (Command _ args) = args
 
+unpackCommand :: Command l sl r m a -> (Arguments l, ExecutionFunction l sl r m a)
+unpackCommand (Command ins args) = (args, exec ins)
 
-data InstructionType = InsType Arguments
+-- | function that executes on the state given a set of arguments
+type ExecutionFunction l sl r m a = (Arguments l -> MachineST l sl r m a)
 
-typeA :: InstructionType
-typeA = InsType (rd <> ra <> rb)
+type InstructionSet l sl r m a = M.Map String (Instruction l sl r m a)
 
-typeB :: InstructionType
-typeB = InsType (rd <> ra <> imm)
-
-imm = Immediate END
-
-ra = Register "ra" END
-
-rb = Register "rb" END
-
-rd = Register "rd" END
+execute :: Command l sl r m a -> MachineST l sl r m a
+execute com = let (args, f) = unpackCommand com
+              in f args
 
 
---Decode
+typeA :: (Monad m) => (r -> r -> r) -> ExecutionFunction String String r m ()
+typeA op (Args x) = do
+  let (Just ra) = M.lookup "ra" x
+      (Just rb) = M.lookup "rb" x
+      (Just rd) = M.lookup "rd" x
+  operate op ra rb rd
 
 
-
-
---what i want
-{-
-mbInsSet = [ "add" <> typeA <> (+)
-           , "addi" <> typeB <> (+) ]
--}
-
-
-
-
-{-
-processTypeA :: (Monad m) => Word32 -> StateT MicroBlaze m ()
-processTypeA w = do
-  (ins, rd, ra ,rb) <- parseAFromWord32 w
-  -- parseAFromWord32 :: Word32 -> (Ins(with operation), loc rd, loc ra, loc rb)
-  a <- get ra
-  b <- get rb
-  op <- getOp ins
-  set rd (a `op` b)
-  return ()
--}
-
--- Maybe on second thought the instructions should not include sizing.
--- Register sizes could vary in size but still operate on the same ins set
-
+add :: (Monad m, Num r) => Instruction String String r m ()
+add = Ins "add" (typeA (+))

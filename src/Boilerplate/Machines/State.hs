@@ -21,8 +21,8 @@ modifyRegister l f = modify $ M.modifyRegister l f
 
 -- | Conducts an operation on two register values and places the result in
 --   a third register r_d
-operate :: (Monad m, Ord l) => l -> (r -> r -> r) -> l -> l -> MachineST l sl r m ()
-operate l_1 op l_2 l_d = do
+operate :: (Monad m, Ord l) => (r -> r -> r) -> l -> l -> l -> MachineST l sl r m ()
+operate op l_1 l_2 l_d = do
   r_1 <- getRegister l_1
   r_2 <- getRegister l_2
   case (r_1, r_2) of
