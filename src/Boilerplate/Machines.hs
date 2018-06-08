@@ -3,10 +3,12 @@ module Boilerplate.Machines
     -- * Machines
     Machine
   , machine
+  , registers
     -- * Register Banks
   , RegisterBank
   , newRegisterBank
   , standardRegisterBank
+  , getBank
     -- ** Register Manipulation
   , setRegister
   , getRegister
@@ -14,14 +16,21 @@ module Boilerplate.Machines
     -- ** Special Purpose Register Banks
   , SpecialRegisters
   , specialFromList 
+  , setSpecialRegister
+  , getSpecialRegister
+  , modifySpecialRegister
+
+  , setSPRBit
+  , clearSPRBit
     -- * Examples
     -- ** MicroBlaze
   , mb
   ) where
 
+import           Boilerplate.Machines.SpecialPurposeRegister
+import           Data.Bits
 import qualified Data.Map.Lazy as M
-import Data.Word
-import Data.Bits
+import           Data.Word
 
 -- * Machine
 
@@ -59,9 +68,19 @@ setSpecialRegister :: (Ord sl) => sl -> r -> Machine l sl r -> Machine l sl r
 setSpecialRegister sl r (Machine rb (RegisterBank m)) = Machine rb (RegisterBank $ M.adjust (const r) sl m)
 
 modifySpecialRegister :: (Ord sl) => sl -> (r -> r) -> Machine l sl r -> Machine l sl r
-modifySpecialRegister sl f m = case getSpecialRegister sl m of 
+modifySpecialRegister sl f m = case getSpecialRegister sl m of
                                  Just r -> setSpecialRegister sl (f r) m
                                  Nothing -> m
+
+setSPRBitTo :: (FiniteBits r, Ord sl) => Bool -> sl -> Int -> Machine l sl r -> Machine l sl r
+setSPRBitTo b x n m = modifySpecialRegister x (\r -> op r n) m
+  where op = if b then setBit else clearBit
+
+setSPRBit :: (FiniteBits r, Ord sl) => sl -> Int -> Machine l sl r -> Machine l sl r
+setSPRBit x n m = setSPRBitTo True x n m
+
+clearSPRBit :: (FiniteBits r, Ord sl) => sl -> Int -> Machine l sl r -> Machine l sl r
+clearSPRBit x n m = setSPRBitTo False x n m
 
 -- * RegisterBanks
 
@@ -82,14 +101,16 @@ newRegisterBank size labelmaker = RegisterBank $ foldr insertN M.empty [0..(size
 --   Important to note that this produces a strange order from labels
 --   being Strings
 standardRegisterBank :: (FiniteBits r) => Int -> RegisterBank String r
-standardRegisterBank n = newRegisterBank n (\n -> "r" ++ (show n))
+standardRegisterBank n = newRegisterBank n (\n -> "r" ++ if n < 10 then '0' : (show n) else show n)
 
 -- * Special Purpose Register Banks
 
 type SpecialRegisters sl r = RegisterBank sl r
 
 specialFromList :: (FiniteBits r, Ord l) => [l] -> SpecialRegisters l r
-specialFromList ls = newRegisterBank (length ls) (\n -> ls !! n) 
+specialFromList ls = newRegisterBank (length ls) (\n -> ls !! n)
+
+
 
 -- * Example(MicroBlaze)
 

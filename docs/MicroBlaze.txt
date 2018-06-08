@@ -76,6 +76,9 @@ setStatus :: MachineStatusBit -> Bool -> RMSR -> RMSR
 instance GHC.Show.Show MachineState.MachineStatusRegister.MachineStatusBit
 
 
+module Interpreter
+
+
 -- | A resumption monad transformer, based on the formulation in the
 --   article <a>Cheap (But Functional) Threads</a> by William L. Harrison
 --   and Adam Procter.
@@ -148,6 +151,7 @@ module Boilerplate.Machines
 -- | A machine of inert(stateless) registers
 data Machine l sl r
 machine :: (FiniteBits r) => Int -> [String] -> Machine String String r
+registers :: Machine l sl r -> RegisterBank l r
 
 -- | A register bank with labels l and registers r
 data RegisterBank l r
@@ -160,34 +164,161 @@ newRegisterBank :: (FiniteBits r, Ord l) => Int -> (Int -> l) -> RegisterBank l 
 --   character <tt>r</tt>. For example the first register is "r0" Important
 --   to note that this produces a strange order from labels being Strings
 standardRegisterBank :: (FiniteBits r) => Int -> RegisterBank String r
+getBank :: RegisterBank l r -> Map l r
+setRegister :: (Ord l) => l -> r -> Machine l sl r -> Machine l sl r
+getRegister :: (Ord l) => l -> Machine l sl r -> Maybe r
+modifyRegister :: (Ord l) => l -> (r -> r) -> Machine l sl r -> Machine l sl r
 type SpecialRegisters sl r = RegisterBank sl r
 specialFromList :: (FiniteBits r, Ord l) => [l] -> SpecialRegisters l r
+setSpecialRegister :: (Ord sl) => sl -> r -> Machine l sl r -> Machine l sl r
+getSpecialRegister :: (Ord sl) => sl -> Machine l sl r -> Maybe r
+modifySpecialRegister :: (Ord sl) => sl -> (r -> r) -> Machine l sl r -> Machine l sl r
+setSPRBit :: (FiniteBits r, Ord sl) => sl -> Int -> Machine l sl r -> Machine l sl r
+clearSPRBit :: (FiniteBits r, Ord sl) => sl -> Int -> Machine l sl r -> Machine l sl r
 mb :: Machine String String Word32
 instance (GHC.Show.Show sl, GHC.Show.Show l, GHC.Show.Show r) => GHC.Show.Show (Boilerplate.Machines.Machine l sl r)
 instance (GHC.Show.Show r, GHC.Show.Show l) => GHC.Show.Show (Boilerplate.Machines.RegisterBank l r)
 
-module Boilerplate.Instruction
-type Name = String
-type Size = Word
+module Boilerplate.Machines.State
 
--- | This type is used for defining arguments and their sizes for use as
---   instruction codes
-data Arguments
-Register :: Name -> Arguments -> Arguments
-Immediate :: Arguments -> Arguments
-END :: Arguments
-data InstructionType
-InsType :: Arguments -> InstructionType
-typeA :: InstructionType
-typeB :: InstructionType
-imm :: Arguments
-ra :: Arguments
-rb :: Arguments
-rd :: Arguments
-instance GHC.Read.Read Boilerplate.Instruction.Arguments
-instance GHC.Show.Show Boilerplate.Instruction.Arguments
-instance GHC.Base.Monoid Boilerplate.Instruction.Arguments
-instance Data.Semigroup.Semigroup Boilerplate.Instruction.Arguments
+-- | Stateful Machine Definitions This should be an internal type only
+type MachineST l sl r = StateT (Machine l sl r)
+setRegister :: (Monad m, Ord l) => l -> r -> MachineST l sl r m ()
+getRegister :: (Monad m, Ord l) => l -> MachineST l sl r m (Maybe r)
+modifyRegister :: (Monad m, Ord l) => l -> (r -> r) -> MachineST l sl r m ()
+
+-- | Conducts an operation on two register values and places the result in
+--   a third register r_d
+operate :: (Monad m, Ord l) => (r -> r -> r) -> l -> l -> l -> MachineST l sl r m ()
+operateWithImmediate :: (Monad m, Ord l) => (r -> r -> r) -> l -> r -> l -> MachineST l sl r m ()
+setSpecialRegister :: (Monad m, Ord sl) => sl -> r -> MachineST l sl r m ()
+getSpecialRegister :: (Monad m, Ord sl) => sl -> MachineST l sl r m (Maybe r)
+modifySpecialRegister :: (Monad m, Ord sl) => sl -> (r -> r) -> MachineST l sl r m ()
+setSPRBit :: (Monad m, FiniteBits r, Ord sl) => sl -> Int -> MachineST l sl r m ()
+clearSPRBit :: (Monad m, FiniteBits r, Ord sl) => sl -> Int -> MachineST l sl r m ()
+
+module Boilerplate.Machines.SpecialPurposeRegister
+data SpecialRegister r l
+PC :: (ProgramCounter r) -> SpecialRegister r l
+MSR :: (MachineStatus r l) -> SpecialRegister r l
+Other :: r -> l -> SpecialRegister r l
+data MachineStatus r l
+msr :: (FiniteBits r, Eq l) => r -> BitConfiguration l -> SpecialRegister r l
+
+-- | A naming configuration for bits in a <a>MachineStatus</a> Register.
+--   This provides name-based access to a bit in an msr based on the bits
+--   function as a flag.
+newtype BitConfiguration l
+BitConf :: [Maybe l] -> BitConfiguration l
+
+-- | an unnamed bit
+--   
+--   typically used to set aside space for flow related operations,
+--   constants, or non-user accessible flags
+blank :: BitConfiguration l
+
+-- | Same as <a>blank</a> but for multiple blanks in order
+blanks :: Int -> BitConfiguration l
+
+-- | Defines a named bit that represents some flag in a Machine Status
+--   Register(<a>MachineStatus</a>).
+named :: l -> BitConfiguration l
+
+-- | Same as <a>named</a>, but, provided a list of names, names the next n
+--   bits according to the provided list. (where n is the number of names
+--   provided)
+names :: [l] -> BitConfiguration l
+data ProgramCounter r
+pc :: r -> Int -> SpecialRegister r l
+incrementPC :: (Integral r) => ProgramCounter r -> ProgramCounter r
+instance (GHC.Show.Show l, GHC.Show.Show r) => GHC.Show.Show (Boilerplate.Machines.SpecialPurposeRegister.SpecialRegister r l)
+instance GHC.Show.Show r => GHC.Show.Show (Boilerplate.Machines.SpecialPurposeRegister.ProgramCounter r)
+instance (GHC.Show.Show l, GHC.Show.Show r) => GHC.Show.Show (Boilerplate.Machines.SpecialPurposeRegister.MachineStatus r l)
+instance Data.Semigroup.Semigroup (Boilerplate.Machines.SpecialPurposeRegister.BitConfiguration l)
+instance GHC.Base.Monoid (Boilerplate.Machines.SpecialPurposeRegister.BitConfiguration l)
+instance GHC.Show.Show l => GHC.Show.Show (Boilerplate.Machines.SpecialPurposeRegister.BitConfiguration l)
+
+module Boilerplate.Instruction
+
+-- | The definition of some abstract instruction
+data Instruction l sl r m
+Ins :: String -> ArgumentsForm l -> ExecutionFunction l sl r m -> Instruction l sl r m
+[name] :: Instruction l sl r m -> String
+[form] :: Instruction l sl r m -> ArgumentsForm l
+[exec] :: Instruction l sl r m -> ExecutionFunction l sl r m
+data Argument l r
+Register :: l -> Argument l r
+Immediate :: r -> Argument l r
+
+-- | arguments to a command represent a mapping of register argument labels
+--   to their register label or immediate data example: ra -&gt; r1 or rd
+--   -&gt; r32, imm -&gt; 123
+data Arguments l r
+Args :: (Map l (Argument l r)) -> Arguments l r
+newtype ArgumentsForm l
+Form :: [(ArgumentForm, l)] -> ArgumentsForm l
+data ArgumentForm
+Reg :: ArgumentForm
+Imm :: ArgumentForm
+reg :: l -> ArgumentsForm l
+imm :: l -> ArgumentsForm l
+getArg :: (Ord l) => Arguments l r -> l -> Maybe (Argument l r)
+
+-- | the command that actually executes on a machine
+data Command l sl r m
+Command :: (Instruction l sl r m) -> (Arguments l r) -> Command l sl r m
+[instruction] :: Command l sl r m -> (Instruction l sl r m)
+[arguments] :: Command l sl r m -> (Arguments l r)
+getExec :: Command l sl r m -> ExecutionFunction l sl r m
+getArgs :: Command l sl r m -> Arguments l r
+unpackCommand :: Command l sl r m -> (Arguments l r, ExecutionFunction l sl r m)
+
+-- | function that executes on the state given a set of arguments
+type ExecutionFunction l sl r m = Arguments l r -> MachineST l sl r m ()
+type InstructionSet l sl r m = Map String (Instruction l sl r m)
+execute :: Command l sl r m -> MachineST l sl r m ()
+argsFromList :: (Ord l) => [(l, Argument l r)] -> Arguments l r
+setFromList :: [Instruction l sl r m] -> InstructionSet l sl r m
+instance (GHC.Show.Show l, GHC.Show.Show r) => GHC.Show.Show (Boilerplate.Instruction.Command l sl r m)
+instance Data.Semigroup.Semigroup (Boilerplate.Instruction.ArgumentsForm l)
+instance GHC.Base.Monoid (Boilerplate.Instruction.ArgumentsForm l)
+instance (GHC.Show.Show r, GHC.Show.Show l) => GHC.Show.Show (Boilerplate.Instruction.Arguments l r)
+instance (GHC.Show.Show r, GHC.Show.Show l) => GHC.Show.Show (Boilerplate.Instruction.Argument l r)
+instance (GHC.Read.Read r, GHC.Read.Read l) => GHC.Read.Read (Boilerplate.Instruction.Argument l r)
+instance GHC.Show.Show (Boilerplate.Instruction.Instruction l sl r m)
+
+module Boilerplate.Parse
+parseCommand :: (Integral r, Read l, Ord l) => Parser l -> InstructionSet l sl r m -> Parser (Command l sl r m)
+parseInstruction :: InstructionSet l sl r m -> Parser (Instruction l sl r m)
+parseArgs :: (Integral r, Read l, Ord l) => (Parser l) -> ArgumentsForm l -> Parser (Arguments l r)
+parseArg :: (Integral r, Ord l) => Parser l -> (ArgumentForm, l) -> Parser (l, Argument l r)
+parseRegister :: Parser l -> Parser (Argument l r)
+parseData :: (Integral r) => Parser (Argument l r)
+parseRepl :: (Integral r, Read l, Ord l) => Parser l -> InstructionSet l sl r m -> IO (Maybe (Command l sl r m))
+
+module Boilerplate.IO
+printMachine :: (Show l, FiniteBits r, Show r, Integral r) => Machine l sl r -> IO ()
+printRegisterBank :: (Show l, FiniteBits r, Show r, Integral r) => RegisterBank l r -> IO ()
+printSpecialRegisters :: (Show sl) => SpecialRegisters sl r -> IO ()
+printRegister :: (FiniteBits r, Show r, Integral r) => String -> r -> IO ()
+prettyReg :: (FiniteBits r, Show r, Integral r) => String -> r -> String
+prettybits :: (FiniteBits r) => r -> String
+test1 :: IO ()
+
+module Boilerplate.Execution
+type In l sl r m = Maybe (Command l sl r m)
+type Out = String
+type MachineReacT l sl r m a = ReacT (In l sl r m) Out (MachineST l sl r m) a
+data MachineDefinition l sl r m
+MachineDef :: Machine l sl r -> InstructionSet l sl r m -> (Machine l sl r -> IO ()) -> Parser l -> MachineDefinition l sl r m
+[machine] :: MachineDefinition l sl r m -> Machine l sl r
+[insSet] :: MachineDefinition l sl r m -> InstructionSet l sl r m
+[prnt] :: MachineDefinition l sl r m -> (Machine l sl r -> IO ())
+[_parse] :: MachineDefinition l sl r m -> Parser l
+runMachine :: (Integral r, Ord l, Read l) => MachineDefinition l sl r IO -> IO ()
+startBasicFDE :: (Monad m) => MachineReacT l sl r m String
+basicFDE :: (Monad m) => Maybe (Command l sl r m) -> MachineReacT l sl r m String
+basicREPL :: (Integral r, Read l, Ord l) => InstructionSet l sl r m -> Parser l -> (Machine l sl r -> IO ()) -> Out -> MachineST l sl r IO (In l sl r m)
 
 
 module Boilerplate
@@ -648,6 +779,31 @@ module Decode
 instance GHC.Show.Show Decode.RawIns
 
 
+module MachineState
+
+-- | Full MicroBlaze Register Profile
+type MicroBlaze = Machine String String Word32
+
+-- | Creates a zero-initialized MicroBlaze controller
+newMicroBlaze :: MicroBlaze
+
+
+module IO
+
+module InstructionSet
+mbDefinition :: MachineDefinition String String Word32 IO
+type MBInstruction m = Instruction String String Word32 m
+instructionList :: InstructionSet String String Word32 IO
+formA :: ArgumentsForm String
+formB :: ArgumentsForm String
+parseMBReg :: Parser String
+typeA :: (Monad m) => (Word32 -> Word32 -> Word32) -> ExecutionFunction String String Word32 m
+typeB :: (Monad m) => (Word32 -> Word32 -> Word32) -> ExecutionFunction String String Word32 m
+
+
+module MachineState.Execution
+
+
 module MachineState.InstructionBuffer
 data InstructionBuffer
 InstructionBuffer :: Maybe Word32 -> Maybe Ins -> InstructionBuffer
@@ -655,225 +811,6 @@ InstructionBuffer :: Maybe Word32 -> Maybe Ins -> InstructionBuffer
 [_execute] :: InstructionBuffer -> Maybe Ins
 type Address = Word32
 emptyInstructionBuffer :: InstructionBuffer
-
-
-module MachineState
-
--- | Full MicroBlaze Register Profile
-data MicroBlaze
-MicroBlaze :: MBRegisters -> RPC -> RMSR -> InstructionBuffer -> MicroBlaze
-
--- | Standard word size for MicroBlaze
-type MBWord = Word32
-
--- | Creates a zero-initialized MicroBlaze controller
-newMicroBlaze :: MicroBlaze
-
--- | Program Counter
-type RPC = MBWord
-
--- | Gets the RPC from a MicroBlaze State
-getRPC :: (Monad m) => StateT MicroBlaze m MBWord
-
--- | Sets the RPC in a MicroBlaze State
-setRPC :: (Monad m) => MBWord -> StateT MicroBlaze m ()
-
--- | Sets a specified bit on the machine status register
-setMSRBit :: (Monad m) => MachineStatusBit -> Bool -> StateT MicroBlaze m ()
-
--- | Gets the value of a specified MSR Bit
-getMSRBit :: (Monad m) => MachineStatusBit -> StateT MicroBlaze m Bool
-
--- | Pulls the enture Machine Status Register as a 32-bit Word
-pullMSR :: (Monad m) => StateT MicroBlaze m Word32
-
--- | Pushes an enture MSR as a 32-bit word
-pushMSR :: (Monad m) => Word32 -> StateT MicroBlaze m ()
-
--- | The register store for the Microblaze
-data MBRegisters
-
--- | zero-initialized register bank
-emptyRegisters :: MBRegisters
-
--- | gets the value at a specified register
-getRegister :: (Monad m) => MBReg -> StateT MicroBlaze m MBWord
-
--- | sets the value at a specified register
-setRegister :: (Monad m) => MBReg -> MBWord -> StateT MicroBlaze m ()
-
--- | read a given register
-readRegister :: MBReg -> MBRegisters -> MBWord
-type Address = Word32
-
--- | loads a 32-bit word from memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-loadWord :: (Monad m) => Word32 -> StateT MicroBlaze m Word32
-
--- | loads a 16-bit half-word from memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-loadHalfWord :: (Monad m) => Word32 -> StateT MicroBlaze m Word16
-
--- | loads a byte from memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-loadByte :: (Monad m) => Word32 -> StateT MicroBlaze m Word8
-
--- | stores a 32-bit word in memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-storeWord :: (Monad m) => Word32 -> Word32 -> Word32 -> StateT MicroBlaze m ()
-
--- | stores a 16-bit half-word in memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-storeHalfWord :: (Monad m) => Word16 -> Word32 -> Word32 -> StateT MicroBlaze m ()
-
--- | stores a 8-bit byte in memory
---   
---   <b>NOT YET IMPLEMENTED</b>
-storeByte :: (Monad m) => Word8 -> Word32 -> Word32 -> StateT MicroBlaze m ()
-fetch :: Address -> State MicroBlaze Word32
-pushInstructionBuffer :: InstructionBuffer -> State MicroBlaze ()
-pullDecode :: State MicroBlaze (Maybe Word32)
-pullExec :: State MicroBlaze (Maybe Ins)
-
-
-module IO
-printRegisters :: MicroBlaze -> IO ()
-printRPC :: MicroBlaze -> IO ()
-printRegister :: MicroBlaze -> MBReg -> IO ()
-printMicroBlaze :: MicroBlaze -> IO ()
-printStatus :: RMSR -> IO ()
-
-
-module Interpreter
-executeNext :: State MicroBlaze ()
-nextPCAddress :: State MicroBlaze Address
-isPositive :: Word32 -> Bool
-isNegative :: Word32 -> Bool
-lessThanOrEqualToZero :: Word32 -> Bool
-exec :: (Monad m) => Ins -> StateT MicroBlaze m ()
-addWithCarry :: (Num a, Ord a) => a -> a -> Bool -> (Bool, a)
-
--- | Delay Flag for Branching
-type DelayFlag = Bool
-
--- | Branch Input Type
-data BranchInput
-TypeA :: MBReg -> MBReg -> BranchInput
-TypeB :: MBReg -> Word16 -> BranchInput
-
--- | Absolute Branch Input Type
-data AbsoluteBranchInput
-AbsR :: MBReg -> AbsoluteBranchInput
-AbsI :: Word16 -> AbsoluteBranchInput
-
--- | Isomorphism type
-type Op = Word32 -> Word32 -> Word32
-
--- | execute a type a instruction using basic operators
-execTypeA :: (Monad m) => Op -> MBReg -> MBReg -> MBReg -> StateT MicroBlaze m ()
-
--- | execute a type b instruction using basic operators
-execTypeB :: (Monad m) => Op -> MBReg -> MBReg -> Word16 -> StateT MicroBlaze m ()
-
--- | SHOULD BE DEPRECATED
-getBranchInputValue :: (Monad m) => BranchInput -> StateT MicroBlaze m Word32
-
--- | SHOULD BE DEPRECATED
-getBranchRegisterA :: (Monad m) => BranchInput -> StateT MicroBlaze m Word32
-
--- | branch to an absolute address
-absoluteBranch :: (Monad m) => AbsoluteBranchInput -> StateT MicroBlaze m ()
-
--- | branch to a relative address
-branch :: (Monad m) => BranchInput -> (MBWord -> Bool) -> StateT MicroBlaze m ()
-
--- | adding mechanism for MicroBlaze (likely can be deprecated)
-add :: (Monad m) => CarryFlag -> KeepFlag -> (MBReg, Either MBReg Word16) -> MBReg -> StateT MicroBlaze m ()
-
--- | hardware subtraction (likely can be deprecated)
-sub :: (Monad m) => CarryFlag -> KeepFlag -> (MBReg, Either MBReg Word16) -> MBReg -> StateT MicroBlaze m ()
-reverseSubtraction :: (Num a, Bits a, Ord a) => a -> a -> Bool -> (Bool, a)
-
--- | Carry Flag for adder
-type CarryFlag = Bool
-
--- | Keep Flag for adder
-type KeepFlag = Bool
-data LoadSize
-LWord :: LoadSize
-LHalfWord :: LoadSize
-LByte :: LoadSize
-
--- | Either-like datatype to differentiate TypeA and TypeB data
-data ImmOrReg
-Register :: MBReg -> ImmOrReg
-Immediate :: Word16 -> ImmOrReg
-
--- | Loads data from memory, The two register offsets are added to obtain
---   an address
-load :: (Monad m) => LoadSize -> MBReg -> MBReg -> ImmOrReg -> StateT MicroBlaze m ()
-data StoreSize
-SWord :: StoreSize
-SHalfWord :: StoreSize
-SByte :: StoreSize
-store :: (Monad m) => StoreSize -> MBReg -> MBReg -> ImmOrReg -> StateT MicroBlaze m ()
-
--- | pulls either the MSR or PC register into given register
-moveFromSRegister :: (Monad m) => MBReg -> MBSReg -> StateT MicroBlaze m ()
-
--- | puts a Word into a special purpose register. Does not support updates
---   to the program counter
-moveToSRegister :: (Monad m) => MBSReg -> MBReg -> StateT MicroBlaze m ()
-
--- | links the current program counter value into the specified register
-link :: (Monad m) => MBReg -> StateT MicroBlaze m ()
-
--- | sets the delay flag in the machine status register
-delay :: (Monad m) => StateT MicroBlaze m ()
-
--- | returns the pc from a break, interrupt, or subroutine
-returnFrom :: (Monad m) => MBReg -> Word16 -> StateT MicroBlaze m ()
-sext8 :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
-sext16 :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
-shiftRightArithmetic :: (Monad m) => CarryFlag -> MBReg -> MBReg -> StateT MicroBlaze m ()
-shiftRightLogical :: (Monad m) => MBReg -> MBReg -> StateT MicroBlaze m ()
-logicalShiftRight :: (Bits a) => a -> (Bool, a)
-arithmeticShiftRight :: (FiniteBits a) => a -> Bool -> (Bool, a)
-leastSignificantHalfWord :: Word32 -> Word16
-leastSignificantByte :: Word32 -> Word8
-maybeSignExtend :: (Integral a, Integral b, FiniteBits a, FiniteBits b) => a -> Maybe b
-showFiniteBits :: (FiniteBits a) => a -> String
-backExtend :: (Integral a, Integral b, FiniteBits a, FiniteBits b) => a -> Maybe b
-
-
-module MachineState.Execution
-data InboundSignals
-In :: Maybe (MBSize, LoadData, MBReg) -> Maybe Ins -> InboundSignals
-[_readData] :: InboundSignals -> Maybe (MBSize, LoadData, MBReg)
-[_instruction] :: InboundSignals -> Maybe Ins
-data OutboundSignals
-Out :: Address -> Maybe (Address, MBReg, MBSize) -> Maybe (Address, StoreData, MBSize) -> MicroBlaze -> OutboundSignals
-[_nextInstruction] :: OutboundSignals -> Address
-[_read] :: OutboundSignals -> Maybe (Address, MBReg, MBSize)
-[_write] :: OutboundSignals -> Maybe (Address, StoreData, MBSize)
-[_st] :: OutboundSignals -> MicroBlaze
-type StoreData = Word32
-type LoadData = Word32
-type MBlazeRe m = ReacT InboundSignals OutboundSignals (StateT MicroBlaze m)
-startFDE :: (Monad m) => MBlazeRe m ()
-fde :: (Monad m) => InboundSignals -> MBlazeRe m ()
-incrementPC :: (Monad m) => StateT MicroBlaze m ()
-makeOutbound :: (Monad m) => Maybe Ins -> StateT MicroBlaze m OutboundSignals
-processWrite :: (Monad m) => Ins -> StateT MicroBlaze m (Maybe (Address, StoreData, MBSize))
-unpackWrite :: Ins -> Maybe (MBReg, MBReg, Either Word16 MBReg, MBSize)
-processLoad :: (Monad m) => Ins -> StateT MicroBlaze m (Maybe (Address, MBReg, MBSize))
-unpackLoad :: Ins -> Maybe (MBReg, MBReg, Either Word16 MBReg, MBSize)
-processIncomingMemory :: (Monad m) => InboundSignals -> StateT MicroBlaze m ()
 
 module ParserMicroBlaze
 expandFilePath :: FilePath -> IO FilePath
@@ -1004,11 +941,6 @@ instance GHC.Show.Show ParserMicroBlaze.Op
 
 
 module REPL
-runFreshRepl :: IO ((), MicroBlaze)
-repl :: OutboundSignals -> StateT MicroBlaze IO (InboundSignals)
-postWrite :: Maybe (Address, StoreData, MBSize) -> IO ()
-getRead :: Maybe (Address, MBReg, MBSize) -> IO (Maybe (MBSize, LoadData, MBReg))
-buildInstruction :: Address -> IO (Ins)
 
 
 module TestData

@@ -25,7 +25,9 @@ dependencies:
 - transformers
 - mmorph
 - base-unicode-symbols
-- containers 
+- containers
+- split
+- pretty 
 
 library:
   source-dirs: src

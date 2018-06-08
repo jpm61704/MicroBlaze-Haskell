@@ -4,5 +4,5 @@ import REPL
 
 main :: IO ()
 main = do
-  runFreshRepl
+  --runFreshRepl
   return ()
