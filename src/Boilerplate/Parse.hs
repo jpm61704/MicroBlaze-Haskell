@@ -6,14 +6,14 @@ import qualified Data.Map.Lazy as M
 import qualified Text.Read as R
 
 
-parseCommand :: (Integral r, Read l, Ord l) => Parser l -> InstructionSet l sl r m -> Parser (Command l sl r m)
+parseCommand :: (Integral r, Read l, Ord l) => Parser l -> InstructionSet l sl r m a -> Parser (Command l sl r m a)
 parseCommand p insset = do
   ins <- parseInstruction insset
   args <- parseArgs p $ form ins
   return $ Command ins args
 
 
-parseInstruction :: InstructionSet l sl r m -> Parser (Instruction l sl r  m)
+parseInstruction :: InstructionSet l sl r m a -> Parser (Instruction l sl r m a)
 parseInstruction insset = do
   ins <- many1 alphanum
   case M.lookup ins insset of
@@ -46,8 +46,8 @@ parseData = do
 
 parseRepl :: (Integral r, Read l, Ord l)
           => Parser l
-          -> InstructionSet l sl r  m
-          -> IO (Maybe (Command l sl r m))
+          -> InstructionSet l sl r m a
+          -> IO (Maybe (Command l sl r m a))
 parseRepl parse_reg insset = do
   s <- getLine
   let pr = parse (parseCommand parse_reg insset) s

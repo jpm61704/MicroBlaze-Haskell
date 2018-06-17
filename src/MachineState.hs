@@ -26,5 +26,5 @@ type MicroBlazeST m a = MachineST String String Word32 m a
 -- | Creates a zero-initialized MicroBlaze controller
 
 newMicroBlaze :: MicroBlaze
-newMicroBlaze = machine 32 ["rpc", "rmsr"]
+newMicroBlaze = machine 32 ["pc", "msr"]
 

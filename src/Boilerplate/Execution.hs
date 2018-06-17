@@ -9,34 +9,37 @@ import Control.Monad.State.Lazy
 import Control.Monad.Reader
 import Parsing
 
-type In l sl r m = Maybe (Command l sl r m)
+type In l sl r m a = Maybe (Command l sl r m a)
 type Out = String
 
 type MachineReacT l sl r m a =
   ReacT
-  (In l sl r m)
-  Out
+  (In l sl r m a)
+  Out 
   (MachineST l sl r m)
   a
 
-data MachineDefinition l sl r m = MachineDef { machine :: Machine l sl r
-                                             , insSet  :: InstructionSet l sl r m
-                                             , prnt :: (Machine l sl r -> IO ())
-                                             , _parse :: Parser l
-                                             }
+data MachineDefinition l sl r m a = MachineDef { machine :: Machine l sl r
+                                               , insSet  :: InstructionSet l sl r m a
+                                               , prnt :: (Machine l sl r -> IO ())
+                                               , _parse :: Parser l
+                                               }
 
 runMachine :: (Integral r, Ord l, Read l)
-           => MachineDefinition l sl r IO
+           => MachineDefinition l sl r IO a
            -> IO ()
-runMachine (MachineDef mach insset prt prs) = do 
+runMachine (MachineDef mach insset prt prs) = do
   runStateT (runReacT startBasicFDE (basicREPL insset prs prt)) mach
   return ()
 
-startBasicFDE :: (Monad m) => MachineReacT l sl r m String
+-- runReacT :: Monad m => ReacT input output m a -> (output -> m input) -> m a
+
+
+startBasicFDE :: (Monad m) => MachineReacT l sl r m a
 startBasicFDE = basicFDE Nothing
 
 -- starting with FDE with no memory anything
-basicFDE :: (Monad m) => Maybe (Command l sl r m) -> MachineReacT l sl r m String
+basicFDE :: (Monad m) => In l sl r m a -> MachineReacT l sl r m a
 basicFDE Nothing = do
   c' <- signal "Enter instruction"
   basicFDE c'
@@ -50,11 +53,11 @@ basicFDE (Just c) = do
 -- getIns = _
 
 basicREPL :: (Integral r, Read l, Ord l)
-          => InstructionSet l sl r m
+          => InstructionSet l sl r m a
           -> Parser l
           -> (Machine l sl r -> IO ())
           -> Out
-          -> MachineST l sl r IO (In l sl r m)
+          -> MachineST l sl r IO (In l sl r m a)
 basicREPL insset prs prnt out = do
   liftIO $ putStrLn out
   st <- get

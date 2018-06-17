@@ -19,7 +19,8 @@ as carry, overflow, division by zero, etc.
   named,
   names,
 
-  getNumber 
+  getNumber,
+  nameNumPairs
 
                                                   ) where
 
@@ -33,6 +34,11 @@ name-based access to a bit in an msr based on the bits function as a flag.
 -}
 newtype BitConfiguration l = BitConf [Maybe l] deriving (Monoid, Semigroup)
 
+nameNumPairs :: (FiniteBits r) => BitConfiguration bsl -> r -> [(bsl, Bool)]
+nameNumPairs (BitConf conf) reg = foldr f [] $ zip conf [0 .. length conf - 1]
+  where f (msl, i) xs = case msl of
+                          Just name -> (name, testBit reg i) : xs
+                          Nothing -> xs
 {-|
 an unnamed bit
 
