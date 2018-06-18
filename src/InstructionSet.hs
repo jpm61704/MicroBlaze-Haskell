@@ -18,64 +18,113 @@ import           MachineState
 import           Parsing
 
 
-mbDefinition :: MachineDefinition String String Word32 IO ()
+mbDefinition :: MachineDefinition String String Word32 IO MBControl
 mbDefinition = MachineDef newMicroBlaze instructionList (printMachine (msrBitConf, "msr") "pc") parseMBReg
 
 type MBInstruction m = Instruction String String Word32 m
-
-data MBControl = MBControl { delayFlag :: Bool
-                           , loadFlag :: Bool
-                           , storeFlag :: Bool
-                           }
-
-endOP :: ExecutionFunction String String Word32 IO MBControl
-endOP = return $ MBControl False False False
-
-withDelay :: ExecutionFunction String String Word32 IO MBControl
-withDelay = return $ MBControl True False False
 
 -- This need to reflect:
 -- # immediate storing
 -- # load, store
 -- # delay flags
-instructionList :: InstructionSet String String Word32 IO ()
-instructionList = setFromList [ Ins "add" formA    $ add ("ra", "rb") False >>= carryOut
-                              , Ins "addc" formA   $ addWithCarryS ("ra", "rb") >>= carryOut
-                              , Ins "addk" formA   $ add ("ra", "rb") False >>= keep
-                              , Ins "addkc" formA  $ addWithCarryS ("ra", "rb") >>= keep
-                              , Ins "addi" formB   $ add ("ra", "rb") False >>= carryOut
-                              , Ins "addic" formB  $ addWithCarryS ("ra", "imm") >>= carryOut
-                              , Ins "addik" formB  $ add ("ra", "rb") False >>= keep
-                              , Ins "addikc" formB $ addWithCarryS ("ra", "imm") >>= keep
-                              , Ins "and" formA    $ typeA (.&.)
-                              , Ins "andi" formB   $ typeB (.&.)
-                              , Ins "andn" formA   $ typeA andn
-                              , Ins "andni" formB  $ typeB andn
-                              , Ins "beq" formBranchA $ branchIf "ra" (== 0) "rb"
-                              , Ins "beqd" formBranchA $ undefined
-                              , Ins "beqi" formBranchB $ branchIf "ra" (== 0) "imm"
-                              , Ins "beqid" formBranchB $ undefined
-                              , Ins "bge" formBranchA $ branchIf "ra" (>= 0) "rb"
-                              , Ins "bged" formBranchA $ undefined
-                              , Ins "bgei" formBranchB $ branchIf "ra" (>= 0) "imm"
-                              , Ins "bgeid" formBranchB $ undefined
-                              , Ins "bgt" formBranchA $ branchIf "ra" (> 0) "rb"
-                              , Ins "bgtd" formBranchA $ undefined
-                              , Ins "bgti" formBranchB $ branchIf "ra" (> 0) "imm"
-                              , Ins "bgtid" formBranchB $ undefined
-                              , Ins "ble" formBranchA $ branchIf "ra" (<= 0) "rb"
-                              , Ins "bled" formBranchA $ undefined
-                              , Ins "blei" formBranchB $ branchIf "ra" (<= 0) "imm"
-                              , Ins "bleid" formBranchB $ undefined
-                              , Ins "blt" formBranchA $ branchIf "ra" (< 0) "rb"
-                              , Ins "bltd" formBranchA $ undefined
-                              , Ins "blti" formBranchB $ branchIf "ra" (< 0) "imm"
-                              , Ins "bltid" formBranchB $ undefined
-                              , Ins "bne" formBranchA $ branchIf "ra" (/= 0) "rb"
-                              , Ins "bned" formBranchA $ undefined
-                              , Ins "bnei" formBranchB $ branchIf "ra" (/= 0) "imm"
-                              , Ins "bneid" formBranchB $ undefined 
-                              , Ins "cmp" formA    $ compareU "ra" "rb"
+instructionList :: InstructionSet String String Word32 IO MBControl
+instructionList = setFromList [ Ins "add" formA    $ add ("ra", "rb") False >>= carryOut >> endOP
+                              , Ins "addc" formA   $ addWithCarryS ("ra", "rb") >>= carryOut >> endOP
+                              , Ins "addk" formA   $ add ("ra", "rb") False >>= keep >> endOP
+                              , Ins "addkc" formA  $ addWithCarryS ("ra", "rb") >>= keep >> endOP
+                              , Ins "addi" formB   $ add ("ra", "rb") False >>= carryOut >> endOP
+                              , Ins "addic" formB  $ addWithCarryS ("ra", "imm") >>= carryOut >> endOP
+                              , Ins "addik" formB  $ add ("ra", "rb") False >>= keep >> endOP
+                              , Ins "addikc" formB $ addWithCarryS ("ra", "imm") >>= keep >> endOP
+                              , Ins "and" formA    $ typeA (.&.) >> endOP
+                              , Ins "andi" formB   $ typeB (.&.) >> endOP
+                              , Ins "andn" formA   $ typeA andn >> endOP
+                              , Ins "andni" formB  $ typeB andn >> endOP
+                              , Ins "beq" formBranchA $ branchIf "ra" (== 0) "rb" >> endOP
+                              , Ins "beqd" formBranchA $ branchIf "ra" (== 0) "rb" >> withDelay
+                              , Ins "beqi" formBranchB $ branchIf "ra" (== 0) "imm" >> endOP
+                              , Ins "beqid" formBranchB $ branchIf "ra" (== 0) "imm" >> withDelay
+                              , Ins "bge" formBranchA $ branchIf "ra" (>= 0) "rb" >> endOP
+                              , Ins "bged" formBranchA $ branchIf "ra" (>= 0) "rb" >> withDelay
+                              , Ins "bgei" formBranchB $ branchIf "ra" (>= 0) "imm" >> endOP
+                              , Ins "bgeid" formBranchB $ branchIf "ra" (>= 0) "imm" >> withDelay
+                              , Ins "bgt" formBranchA $ branchIf "ra" (> 0) "rb" >> endOP
+                              , Ins "bgtd" formBranchA $ branchIf "ra" (> 0) "rb" >> withDelay
+                              , Ins "bgti" formBranchB $ branchIf "ra" (> 0) "imm" >> endOP
+                              , Ins "bgtid" formBranchB $ branchIf "ra" (> 0) "imm" >> withDelay
+                              , Ins "ble" formBranchA $ branchIf "ra" (<= 0) "rb" >> endOP
+                              , Ins "bled" formBranchA $ branchIf "ra" (<= 0) "rb" >> withDelay
+                              , Ins "blei" formBranchB $ branchIf "ra" (<= 0) "imm" >> endOP
+                              , Ins "bleid" formBranchB $ branchIf "ra" (<= 0) "imm" >> withDelay
+                              , Ins "blt" formBranchA $ branchIf "ra" (< 0) "rb" >> endOP
+                              , Ins "bltd" formBranchA $ branchIf "ra" (< 0) "rb" >> withDelay
+                              , Ins "blti" formBranchB $ branchIf "ra" (< 0) "imm" >> endOP
+                              , Ins "bltid" formBranchB $ branchIf "ra" (< 0) "imm" >> withDelay
+                              , Ins "bne" formBranchA $ branchIf "ra" (/= 0) "rb" >> endOP
+                              , Ins "bned" formBranchA $ branchIf "ra" (/= 0) "rb" >> withDelay
+                              , Ins "bnei" formBranchB $ branchIf "ra" (/= 0) "imm" >> endOP
+                              , Ins "bneid" formBranchB $ branchIf "ra" (/= 0) "imm" >> withDelay
+
+                              -- , Ins "br"
+                              -- , Ins "bra"
+                              -- , Ins "brd"
+                              -- , Ins "brad"
+                              -- , Ins "brld"
+                              -- , Ins "brald"
+
+                              -- , Ins "bri"
+                              -- , Ins "brai"
+                              -- , Ins "brid"
+                              -- , Ins "braid"
+                              -- , Ins "brlid"
+                              -- , Ins "bralid"
+
+                              -- , Ins "brk"
+                              -- , Ins "brki"
+
+                              , Ins "cmp" formA    $ compareU "ra" "rb" >> endOP
+
+                              -- , Ins "imm"
+
+                              -- , Ins "lbu"
+                              -- , Ins "lbui"
+                              -- , Ins "lhu"
+                              -- , Ins "lhui"
+                              -- , Ins "lw"
+                              -- , Ins "lwi"
+
+                              -- , Ins "mfs"
+                              -- , Ins "msrclr"
+                              -- , Ins "msrset"
+                              -- , Ins "mts"
+
+                              -- , Ins "or"
+                              -- , Ins "ori"
+
+                              -- , Ins "rsub"
+                              -- , Ins "rsubi"
+
+                              -- , Ins "rtbd"
+                              -- , Ins "rtid"
+                              -- , Ins "rted"
+                              -- , Ins "rtsd"
+
+                              -- , Ins "sb"
+                              -- , Ins "sbi"
+                              -- , Ins "sh"
+                              -- , Ins "shi"
+                              -- , Ins "sw"
+                              -- , Ins "swi"
+
+                              -- , Ins "sext16"
+                              -- , Ins "sext8"
+
+                              -- , Ins "sra"
+                              -- , Ins "src"
+                              -- , Ins "srl"
+
+                              -- , Ins "xor"
+                              -- , Ins "xori"
                               ]
   where andn = \a b -> a .&. (complement b)
 
@@ -304,3 +353,25 @@ ifTrue f b = if b then f >> return () else return ()
 
 branchIf :: (Monad m) => String -> (Word32 -> Bool) -> String -> ExecutionFunction String String Word32 m ()
 branchIf x p j = x .?. (return . p) >>= ifTrue (addToPC `with` j)
+
+-- * Control Output Types
+
+data MBControl = EndOp
+               | ControlLoad {loadFrom :: Word32, placeAt :: String}
+               | ControlStore {storeAt :: Word32, dataToStore :: Word32}
+               | ControlDelay
+
+
+store :: Word32 -> Word32 -> ExecutionFunction String String Word32 IO MBControl
+store x loc = return $ ControlStore loc x
+
+
+load :: Word32 -> String -> ExecutionFunction String String Word32 IO MBControl
+load from to = return $ ControlLoad from to
+
+endOP :: ExecutionFunction String String Word32 IO MBControl
+endOP = return $ EndOp
+
+withDelay :: ExecutionFunction String String Word32 IO MBControl
+withDelay = return $ ControlDelay
+
